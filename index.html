@@ -3,15 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - البداية</title>
+    <title>Work Tracker - خطوة 2</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         #timer { font-size: 5rem; color: #00d2ff; margin-bottom: 30px; font-weight: bold; }
-        button { padding: 20px 40px; font-size: 1.2rem; border: none; border-radius: 10px; cursor: pointer; color: #fff; font-weight: bold; background: #2ecc71; }
+        .btn { padding: 20px 40px; font-size: 1.5rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; transition: 0.3s; }
+        #mainBtn { background: #2ecc71; }
+        .stop { background: #ff4b2b !important; }
     </style>
 </head>
 <body>
+
     <div id="timer">00:00:00</div>
-    <button onclick="alert('شغال يا هندسة!')">اختبار العمل</button>
+    <button id="mainBtn" class="btn" onclick="toggleTimer()">ابدأ العمل</button>
+
+    <script>
+        let seconds = 0;
+        let timerInterval = null;
+
+        function toggleTimer() {
+            const btn = document.getElementById('mainBtn');
+            
+            if (!timerInterval) {
+                // بدأ العد
+                timerInterval = setInterval(updateTimer, 1000);
+                btn.innerText = "إنهاء العمل";
+                btn.classList.add('stop');
+            } else {
+                // إيقاف وتصفير
+                clearInterval(timerInterval);
+                timerInterval = null;
+                seconds = 0;
+                document.getElementById('timer').innerText = "00:00:00";
+                btn.innerText = "ابدأ العمل";
+                btn.classList.remove('stop');
+            }
+        }
+
+        function updateTimer() {
+            seconds++;
+            let h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+            let m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+            let s = (seconds % 60).toString().padStart(2, '0');
+            document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+        }
+    </script>
 </body>
 </html>
