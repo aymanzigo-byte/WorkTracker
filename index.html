@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - خطوة 2</title>
+    <title>Work Tracker - خطوة 3</title>
     <style>
         body { background: #000; color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
         #timer { font-size: 5rem; color: #00d2ff; margin-bottom: 30px; font-weight: bold; }
@@ -12,7 +12,7 @@
         .stop { background: #ff4b2b !important; }
     </style>
 </head>
-<body>
+<body onload="checkMemory()">
 
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="toggleTimer()">ابدأ العمل</button>
@@ -21,20 +21,45 @@
         let seconds = 0;
         let timerInterval = null;
 
+        // وظيفة فحص الذاكرة أول ما الصفحة تفتح
+        function checkMemory() {
+            const savedStartTime = localStorage.getItem('workStartTime');
+            if (savedStartTime) {
+                // لو لقينا وقت محفوظ، نحسب الفرق بينه وبين دلوقتي
+                const startTime = new Date(savedStartTime);
+                seconds = Math.floor((new Date() - startTime) / 1000);
+                startUI();
+            }
+        }
+
         function toggleTimer() {
-            const btn = document.getElementById('mainBtn');
-            
             if (!timerInterval) {
-                // بدأ العد
-                timerInterval = setInterval(updateTimer, 1000);
+                // حفظ وقت البداية في ذاكرة الموبايل
+                localStorage.setItem('workStartTime', new Date());
+                startUI();
+            } else {
+                // مسح الذاكرة وتصفير العداد
+                clearInterval(timerInterval);
+                timerInterval = null;
+                localStorage.removeItem('workStartTime');
+                seconds = 0;
+                document.getElementById('timer').innerText = "00:00:00";
+                updateButtonUI(false);
+            }
+        }
+
+        function startUI() {
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+            updateButtonUI(true);
+        }
+
+        function updateButtonUI(isRunning) {
+            const btn = document.getElementById('mainBtn');
+            if (isRunning) {
                 btn.innerText = "إنهاء العمل";
                 btn.classList.add('stop');
             } else {
-                // إيقاف وتصفير
-                clearInterval(timerInterval);
-                timerInterval = null;
-                seconds = 0;
-                document.getElementById('timer').innerText = "00:00:00";
                 btn.innerText = "ابدأ العمل";
                 btn.classList.remove('stop');
             }
