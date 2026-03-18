@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Step 4</title>
+    <title>Work Tracker - Step 5</title>
     <style>
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 10px; box-sizing: border-box; }
+        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
         
-        /* المربع الذهبي */
-        .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
         .stat-row:last-child { border-bottom: none; }
         .stat-label { font-size: 0.9rem; color: #888; }
         .stat-value { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
         .overtime-active { color: var(--success); text-shadow: 0 0 10px var(--success); }
 
-        #timer { font-size: 4.5rem; color: var(--primary); margin-bottom: 30px; font-weight: bold; text-shadow: 0 0 20px rgba(0,210,255,0.2); }
-        .btn { padding: 18px 45px; font-size: 1.4rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; transition: 0.3s; width: 80%; max-width: 250px; }
-        #mainBtn { background: var(--success); box-shadow: 0 5px 15px rgba(46,204,113,0.3); }
-        .stop { background: #ff4b2b !important; box-shadow: 0 5px 15px rgba(255,75,43,0.3) !important; }
+        #timer { font-size: 4rem; color: var(--primary); margin: 20px 0; font-weight: bold; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; }
+        #mainBtn { background: var(--success); }
+        .stop { background: #ff4b2b !important; }
+        
+        /* تصميم السجل */
+        #logContainer { width: 100%; max-width: 320px; display: none; margin-top: 10px; }
+        .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .log-date { font-size: 0.85rem; color: #aaa; }
+        .log-hours { color: var(--primary); font-weight: bold; }
+        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
     </style>
 </head>
 <body onload="checkMemory()">
@@ -34,18 +40,20 @@
             <span id="otDisplay" class="stat-value">00:00:00</span>
         </div>
         <div class="stat-row">
-            <span class="stat-label">إجمالي الشهر (26-25):</span>
+            <span class="stat-label">إجمالي الشهر:</span>
             <span id="monthlyDisplay" class="stat-value" style="color: #ffd700;">0h 0m</span>
         </div>
     </div>
+
+    <button class="view-btn" onclick="toggleLog()">عرض السجل اليومي ⬇️</button>
+    <div id="logContainer"></div>
 
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="toggleTimer()">ابدأ العمل</button>
 
     <script>
-        let seconds = 0;
-        let timerInterval = null;
-        const SHIFT_LIMIT = 8 * 3600; // 8 ساعات بالثواني
+        let seconds = 0, timerInterval = null;
+        const SHIFT_LIMIT = 8 * 3600;
 
         function checkMemory() {
             updateMonthlyTotal();
@@ -68,11 +76,9 @@
                 localStorage.removeItem('workStartTime');
                 seconds = 0;
                 document.getElementById('timer').innerText = "00:00:00";
-                document.getElementById('dailyDisplay').innerText = "00:00:00";
-                document.getElementById('otDisplay').innerText = "00:00:00";
-                document.getElementById('otDisplay').classList.remove('overtime-active');
                 updateButtonUI(false);
                 updateMonthlyTotal();
+                if(document.getElementById('logContainer').style.display === 'block') renderLog();
             }
         }
 
@@ -87,21 +93,16 @@
             const timeStr = formatTime(seconds);
             document.getElementById('timer').innerText = timeStr;
             document.getElementById('dailyDisplay').innerText = timeStr;
-
-            // حساب الإضافي
             if (seconds > SHIFT_LIMIT) {
                 const otSecs = seconds - SHIFT_LIMIT;
-                const otDisplay = document.getElementById('otDisplay');
-                otDisplay.innerText = formatTime(otSecs);
-                otDisplay.classList.add('overtime-active');
+                document.getElementById('otDisplay').innerText = formatTime(otSecs);
+                document.getElementById('otDisplay').classList.add('overtime-active');
             }
         }
 
         function saveWorkSession() {
             const startTime = new Date(localStorage.getItem('workStartTime'));
-            // الشيفت يتحسب على تاريخ "يوم البداية"
             const logDate = `${startTime.getFullYear()}-${startTime.getMonth()+1}-${startTime.getDate()}`;
-            
             let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
             logs[logDate] = (logs[logDate] || 0) + seconds;
             localStorage.setItem('workLogs', JSON.stringify(logs));
@@ -111,40 +112,45 @@
             let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
             let totalSeconds = 0;
             const now = new Date();
-            
-            // تحديد بداية ونهاية الشهر المالي (26 لـ 25)
-            let startPeriod, endPeriod;
-            if (now.getDate() >= 26) {
-                startPeriod = new Date(now.getFullYear(), now.getMonth(), 26);
-                endPeriod = new Date(now.getFullYear(), now.getMonth() + 1, 25);
-            } else {
-                startPeriod = new Date(now.getFullYear(), now.getMonth() - 1, 26);
-                endPeriod = new Date(now.getFullYear(), now.getMonth(), 25);
-            }
+            let startP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth(), 26) : new Date(now.getFullYear(), now.getMonth()-1, 26);
+            let endP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth()+1, 25) : new Date(now.getFullYear(), now.getMonth(), 25);
 
-            for (let dateStr in logs) {
-                let logDate = new Date(dateStr);
-                if (logDate >= startPeriod && logDate <= endPeriod) {
-                    totalSeconds += logs[dateStr];
-                }
+            for (let d in logs) {
+                let logD = new Date(d);
+                if (logD >= startP && logD <= endP) totalSeconds += logs[d];
             }
-
-            const h = Math.floor(totalSeconds / 3600);
-            const m = Math.floor((totalSeconds % 3600) / 60);
-            document.getElementById('monthlyDisplay').innerText = `${h}h ${m}m`;
+            document.getElementById('monthlyDisplay').innerText = `${Math.floor(totalSeconds/3600)}h ${Math.floor((totalSeconds%3600)/60)}m`;
         }
 
-        function formatTime(sec) {
-            let h = Math.floor(sec / 3600).toString().padStart(2, '0');
-            let m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
-            let s = (sec % 60).toString().padStart(2, '0');
-            return `${h}:${m}:${s}`;
+        function toggleLog() {
+            const container = document.getElementById('logContainer');
+            container.style.display = container.style.display === 'none' ? 'block' : 'none';
+            if(container.style.display === 'block') renderLog();
         }
 
-        function updateButtonUI(isRunning) {
+        function renderLog() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            const container = document.getElementById('logContainer');
+            container.innerHTML = "";
+            // ترتيب الأيام من الأحدث للأقدم
+            Object.keys(logs).sort().reverse().forEach(date => {
+                let s = logs[date];
+                let h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+                container.innerHTML += `<div class="log-item">
+                    <span class="log-date">${date}</span>
+                    <span class="log-hours">${h}h ${m}m</span>
+                </div>`;
+            });
+        }
+
+        function formatTime(s) {
+            return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+        }
+
+        function updateButtonUI(run) {
             const btn = document.getElementById('mainBtn');
-            btn.innerText = isRunning ? "إنهاء العمل" : "ابدأ العمل";
-            isRunning ? btn.classList.add('stop') : btn.classList.remove('stop');
+            btn.innerText = run ? "إنهاء العمل" : "ابدأ العمل";
+            run ? btn.classList.add('stop') : btn.classList.remove('stop');
         }
     </script>
 </body>
