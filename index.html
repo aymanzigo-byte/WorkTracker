@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Work Tracker Pro</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
@@ -17,25 +17,20 @@
         .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #222; }
         .stat-value { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
         #timer { font-size: 3.8rem; color: var(--primary); margin: 15px 0; font-weight: bold; flex-shrink: 0; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; flex-shrink: 0; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; flex-shrink: 0; transition: 0.2s; }
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; flex-shrink: 0; }
-        
-        /* السجل القابل للسكرول */
         #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         #logContainer::-webkit-scrollbar { width: 4px; }
         #logContainer::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
-
         .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
         .has-ot { border-right: 4px solid var(--success); background: #121a12; }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
         .log-details { display: flex; justify-content: space-between; gap: 4px; }
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
-        .detail-label { color: #666; display: block; font-size: 0.6rem; }
         .detail-val { font-size: 0.75rem; font-weight: bold; }
         .edit-icon { position: absolute; left: 8px; bottom: 8px; cursor: pointer; font-size: 0.9rem; opacity: 0.5; }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
         .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
@@ -43,61 +38,39 @@
     </style>
 </head>
 <body onload="checkMemory()">
-
-    <div class="header">
-        <span class="settings-icon" onclick="openModal('settingsModal')">⚙️</span>
-    </div>
-
+    <div class="header"><span class="settings-icon" onclick="openModal('settingsModal')">⚙️</span></div>
     <div class="dashboard-card">
         <div class="stat-row"><span class="stat-label">ساعات اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
         <div class="stat-row"><span class="stat-label">الإضافي (OT):</span><span id="otDisplay" class="stat-value">00:00:00</span></div>
         <div class="stat-row"><span class="stat-label">إجمالي الشهر:</span><span id="monthlyDisplay" class="stat-value" style="color: var(--accent);">0س 0د</span></div>
     </div>
-
     <button class="view-btn" onclick="toggleLog()">عرض السجل بالتفصيل ⬇️</button>
     <div id="logContainer"></div>
-
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="askPIN()">ابدأ العمل</button>
 
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h3>الإعدادات</h3>
-            <div class="settings-item" onclick="changePIN()">تغيير رمز الدخول (PIN)</div>
-            <div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تصدير السجل لـ Excel 📥</div>
-            <button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button>
-        </div>
-    </div>
-
-    <div id="pinModal" class="modal">
-        <div class="modal-content">
-            <h3>أدخل رمز الدخول</h3>
-            <input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)">
-            <button class="view-btn" style="margin-top:10px" onclick="closeModal('pinModal')">إلغاء</button>
-        </div>
-    </div>
-
-    <div id="editModal" class="modal">
-        <div class="modal-content">
-            <h3>تعديل يدوي</h3>
-            <p id="editDateLabel" style="font-size:0.8rem; color:var(--accent)"></p>
-            <input type="time" id="timeIn"><input type="time" id="timeOut">
-            <button class="btn" style="width:100%; margin-top:20px" onclick="confirmEdit()">حفظ الساعات</button>
-            <button class="view-btn" style="margin-top:10px" onclick="closeModal('editModal')">إلغاء</button>
-        </div>
-    </div>
+    <div id="settingsModal" class="modal"><div class="modal-content"><h3>الإعدادات</h3><div class="settings-item" onclick="changePIN()">تغيير رمز (PIN)</div><div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تصدير لـ Excel 📥</div><button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button></div></div>
+    <div id="pinModal" class="modal"><div class="modal-content"><h3>أدخل الرمز</h3><input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)"><button class="view-btn" style="margin-top:10px" onclick="closeModal('pinModal')">إلغاء</button></div></div>
+    <div id="editModal" class="modal"><div class="modal-content"><h3>تعديل يدوي</h3><p id="editDateLabel"></p><input type="time" id="timeIn"><input type="time" id="timeOut"><button class="btn" style="width:100%; margin-top:20px" onclick="confirmEdit()">حفظ</button><button class="view-btn" style="margin-top:10px" onclick="closeModal('editModal')">إلغاء</button></div></div>
 
     <script>
-        // رابط جوجل شيت (تأكد من وضعه)
-        const SCRIPT_URL = "رابط_السكربت_الخاص_بك"; 
+        // كود تنظيف الكاش الإجباري
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => { for(let reg of regs) reg.unregister(); });
+        }
 
+        const SCRIPT_URL = "حط_رابط_السكربت_هنا"; 
         let seconds = 0, timerInterval = null, currentEditDate = '';
         const SHIFT_LIMIT = 8 * 3600;
 
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
         function checkMemory() {
             updateMonthlyTotal();
-            if (localStorage.getItem('workStartTime')) {
-                seconds = Math.floor((new Date() - new Date(localStorage.getItem('workStartTime'))) / 1000);
+            const savedStart = localStorage.getItem('workStartTime');
+            if (savedStart) {
+                seconds = Math.floor((new Date() - new Date(savedStart)) / 1000);
                 startUI();
             }
         }
@@ -113,18 +86,17 @@
         }
 
         function changePIN() {
-            let p = prompt("أدخل الرمز الجديد (4 أرقام):");
+            let p = prompt("الرمز الجديد (4 أرقام):");
             if(p && p.length === 4) { localStorage.setItem('userPIN', p); alert("تم التغيير!"); }
         }
 
         function toggleTimer() {
             if (!timerInterval) {
-                localStorage.setItem('workStartTime', new Date());
+                localStorage.setItem('workStartTime', new Date().toISOString());
                 startUI();
             } else {
-                const finalSec = seconds;
                 saveWorkSession();
-                syncWithGoogleSheet(finalSec);
+                syncWithGoogleSheet(seconds);
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -136,11 +108,21 @@
             }
         }
 
-        function syncWithGoogleSheet(sec) {
-            if (!SCRIPT_URL || SCRIPT_URL.includes("رابط")) return;
-            const date = new Date().toLocaleDateString('ar-EG');
-            const h = (sec / 3600).toFixed(2);
-            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ date: date, hours: h }) });
+        function startUI() { 
+            if(timerInterval) clearInterval(timerInterval); 
+            timerInterval = setInterval(updateTimer, 1000); 
+            updateButtonUI(true); 
+        }
+
+        function updateTimer() {
+            seconds++;
+            const ts = formatTime(seconds);
+            document.getElementById('timer').innerText = ts;
+            document.getElementById('dailyDisplay').innerText = ts;
+            if (seconds > SHIFT_LIMIT) {
+                document.getElementById('otDisplay').innerText = formatTime(seconds - SHIFT_LIMIT);
+                document.getElementById('otDisplay').style.color = "var(--success)";
+            }
         }
 
         function saveWorkSession() {
@@ -165,12 +147,37 @@
             const container = document.getElementById('logContainer');
             container.innerHTML = "";
             Object.keys(logs).sort().reverse().forEach(date => {
-                const s = logs[date], d = new Date(date);
+                const s = logs[date];
                 let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s, ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
-                container.innerHTML += `
-                    <div class="log-item ${ot>0?'has-ot':''}">
-                        <div class="log-header"><span>${d.toLocaleDateString('ar-EG',{weekday:'long'})}</span><span>${date}</span></div>
-                        <div class="log-details">
-                            <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${Math.floor(basic/3600)}س ${Math.floor((basic%3600)/60)}د</b></div>
-                            <div class="detail-box"><span class="detail-label">إضافي</span><b class="detail-val" style="color:${ot>0?'var(--success)':'#666'}">${Math.floor(ot/3600)}س ${Math.floor((ot%3600)/60)}د</b></div>
-                            <div class="detail-box"><span class="detail-label">الإجمالي</span><b class="detail
+                container.innerHTML += `<div class="log-item ${ot>0?'has-ot':''}"><div class="log-header"><span>يوم</span><span>${date}</span></div><div class="log-details"><div class="detail-box"><span>أساسي</span><br><b>${Math.floor(basic/3600)}س</b></div><div class="detail-box"><span>إضافي</span><br><b style="color:var(--success)">${Math.floor(ot/3600)}س</b></div></div><span class="edit-icon" onclick="openEdit('${date}')">✏️</span></div>`;
+            });
+        }
+
+        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = date; openModal('editModal'); }
+        function confirmEdit() {
+            let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
+            if (tIn && tOut) {
+                let start = new Date(`2000-01-01T${tIn}`), end = new Date(`2000-01-01T${tOut}`);
+                if (end < start) end.setDate(end.getDate() + 1);
+                let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+                logs[currentEditDate] = (end - start) / 1000;
+                localStorage.setItem('workLogs', JSON.stringify(logs));
+                closeModal('editModal'); renderLog(); updateMonthlyTotal();
+            }
+        }
+
+        function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+        function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; run ? b.classList.add('stop') : b.classList.remove('stop'); }
+        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display === 'block') renderLog(); }
+        function exportToSheet() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            let csv = "Date,Total Hours\n";
+            for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'Work_Log.csv'; a.click();
+        }
+        function syncWithGoogleSheet(sec) { if (!SCRIPT_URL.includes("رابط")) fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ date: new Date().toLocaleDateString(), hours: (sec/3600).toFixed(2) }) }); }
+    </script>
+</body>
+</html>
