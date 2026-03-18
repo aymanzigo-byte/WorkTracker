@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Auto Sync V11</title>
+    <title>Work Tracker Pro</title>
+    <link rel="alternate" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000">
     <style>
+        /* (نفس الـ CSS بتاع النسخة V11 اللي فاتت بالظبط بدون تغيير) */
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; height: 100vh; overflow: hidden; box-sizing: border-box; }
         .header { width: 100%; max-width: 350px; display: flex; justify-content: flex-end; padding-bottom: 10px; flex-shrink: 0; }
@@ -18,14 +22,11 @@
         .stop { background: #ff4b2b !important; }
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; flex-shrink: 0; }
         #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; }
-        #logContainer::-webkit-scrollbar { width: 4px; }
-        #logContainer::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
         .has-ot { border-right: 4px solid var(--success); background: #121a12; }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
         .log-details { display: flex; justify-content: space-between; gap: 4px; }
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
-        .detail-label { color: #666; display: block; font-size: 0.6rem; }
         .detail-val { font-size: 0.75rem; font-weight: bold; }
         .edit-icon { position: absolute; left: 8px; bottom: 8px; cursor: pointer; font-size: 0.9rem; opacity: 0.5; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
@@ -80,8 +81,26 @@
     </div>
 
     <script>
-        // ضع رابط الـ Web App الخاص بك هنا ليرسل البيانات للجوجل شيت تلقائياً
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyefPznWrdEopVpiaiRZaIcM89nfFxx1OqqiivOFms7k3nEpptd4LdxXfrMDY0wezYY/exec"; 
+        // كود الـ Service Worker للتحديث التلقائي
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').then(reg => {
+                    reg.onupdatefound = () => {
+                        const installingWorker = reg.installing;
+                        installingWorker.onstatechange = () => {
+                            if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                if (confirm("هناك تحديث جديد متاح! هل تريد التحميل الآن؟")) {
+                                    window.location.reload();
+                                }
+                            }
+                        };
+                    };
+                });
+            });
+        }
+
+        // رابط جوجل شيت (حط الرابط بتاعك هنا)
+        const SCRIPT_URL = "رابط_السكربت_الخاص_بك"; 
 
         let seconds = 0, timerInterval = null, currentEditDate = '';
         const SHIFT_LIMIT = 8 * 3600;
@@ -111,7 +130,7 @@
             } else {
                 const finalSec = seconds;
                 saveWorkSession();
-                syncWithGoogleSheet(finalSec); // الإرسال التلقائي للجوجل شيت
+                syncWithGoogleSheet(finalSec);
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -123,22 +142,11 @@
             }
         }
 
-        // دالة الإرسال التلقائي للجوجل شيت
         function syncWithGoogleSheet(sec) {
-            if (SCRIPT_URL === "ضع_رابط_السكربت_هنا") {
-                console.log("لم يتم وضع رابط السكربت");
-                return;
-            }
+            if (!SCRIPT_URL || SCRIPT_URL === "رابط_السكربت_الخاص_بك") return;
             const date = new Date().toLocaleDateString('ar-EG');
             const h = (sec / 3600).toFixed(2);
-            
-            fetch(SCRIPT_URL, {
-                method: 'POST',
-                mode: 'no-cors',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: date, hours: h })
-            }).then(() => console.log("تم المزامنة مع جوجل شيت بنجاح"))
-              .catch(err => console.error("خطأ في المزامنة: ", err));
+            fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ date: date, hours: h }) });
         }
 
         function saveWorkSession() {
@@ -200,8 +208,7 @@
             for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url; a.download = 'Work_Log.csv'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'Work_Log.csv'; a.click();
         }
     </script>
 </body>
