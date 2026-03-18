@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Step 5</title>
+    <title>Work Tracker - Step 6</title>
     <style>
-        :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; }
+        :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
         
         .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
@@ -20,12 +20,15 @@
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         
-        /* تصميم السجل */
+        /* تصميم السجل المطور */
         #logContainer { width: 100%; max-width: 320px; display: none; margin-top: 10px; }
-        .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-        .log-date { font-size: 0.85rem; color: #aaa; }
-        .log-hours { color: var(--primary); font-weight: bold; }
-        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+        .log-item { background: #111; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
+        .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .log-details { display: flex; justify-content: space-around; font-size: 0.85rem; }
+        .detail-box { text-align: center; }
+        .detail-label { color: #666; display: block; font-size: 0.7rem; }
+        .edit-icon { position: absolute; left: 10px; bottom: 10px; cursor: pointer; opacity: 0.5; font-size: 1rem; }
+        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
     </style>
 </head>
 <body onload="checkMemory()">
@@ -41,11 +44,11 @@
         </div>
         <div class="stat-row">
             <span class="stat-label">إجمالي الشهر:</span>
-            <span id="monthlyDisplay" class="stat-value" style="color: #ffd700;">0h 0m</span>
+            <span id="monthlyDisplay" class="stat-value" style="color: var(--accent);">0h 0m</span>
         </div>
     </div>
 
-    <button class="view-btn" onclick="toggleLog()">عرض السجل اليومي ⬇️</button>
+    <button class="view-btn" onclick="toggleLog()">عرض السجل بالتفصيل ⬇️</button>
     <div id="logContainer"></div>
 
     <div id="timer">00:00:00</div>
@@ -53,7 +56,7 @@
 
     <script>
         let seconds = 0, timerInterval = null;
-        const SHIFT_LIMIT = 0 * 3600;
+        const SHIFT_LIMIT = 8 * 3600;
 
         function checkMemory() {
             updateMonthlyTotal();
@@ -132,15 +135,49 @@
             let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
             const container = document.getElementById('logContainer');
             container.innerHTML = "";
-            // ترتيب الأيام من الأحدث للأقدم
-            Object.keys(logs).sort().reverse().forEach(date => {
-                let s = logs[date];
-                let h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
-                container.innerHTML += `<div class="log-item">
-                    <span class="log-date">${date}</span>
-                    <span class="log-hours">${h}h ${m}m</span>
-                </div>`;
+            
+            Object.keys(logs).sort().reverse().forEach(dateStr => {
+                const totalSec = logs[dateStr];
+                const d = new Date(dateStr);
+                const dayName = d.toLocaleDateString('ar-EG', {weekday: 'long'});
+                
+                let basic = totalSec > SHIFT_LIMIT ? SHIFT_LIMIT : totalSec;
+                let ot = totalSec > SHIFT_LIMIT ? totalSec - SHIFT_LIMIT : 0;
+
+                container.innerHTML += `
+                    <div class="log-item">
+                        <div class="log-header">
+                            <span>${dayName}</span>
+                            <span>${dateStr}</span>
+                        </div>
+                        <div class="log-details">
+                            <div class="detail-box">
+                                <span class="detail-label">أساسي</span>
+                                <b>${Math.floor(basic/3600)}س</b>
+                            </div>
+                            <div class="detail-box" style="color:${ot>0?'#2ecc71':'#666'}">
+                                <span class="detail-label">إضافي</span>
+                                <b>${Math.floor(ot/3600)}س ${Math.floor((ot%3600)/60)}د</b>
+                            </div>
+                            <div class="detail-box">
+                                <span class="detail-label">الإجمالي</span>
+                                <b>${Math.floor(totalSec/3600)}س</b>
+                            </div>
+                        </div>
+                        <span class="edit-icon" onclick="editLog('${dateStr}')">✏️</span>
+                    </div>`;
             });
+        }
+
+        function editLog(date) {
+            let newHours = prompt("أدخل إجمالي عدد الساعات الجديد لهذا اليوم:");
+            if (newHours !== null && !isNaN(newHours)) {
+                let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+                logs[date] = parseFloat(newHours) * 3600;
+                localStorage.setItem('workLogs', JSON.stringify(logs));
+                renderLog();
+                updateMonthlyTotal();
+            }
         }
 
         function formatTime(s) {
