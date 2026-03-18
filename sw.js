@@ -3,10 +3,10 @@ const assets = [
   './',
   './index.html',
   './manifest.json',
-  './icon.png'
+  './icon.png',
+  './sw.js'
 ];
 
-// تثبيت التطبيق وتخزين الملفات
 self.addEventListener('install', evt => {
   evt.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
@@ -15,7 +15,6 @@ self.addEventListener('install', evt => {
   );
 });
 
-// تفعيل التحديثات الجديدة
 self.addEventListener('activate', evt => {
   evt.waitUntil(
     caches.keys().then(keys => {
@@ -27,7 +26,6 @@ self.addEventListener('activate', evt => {
   );
 });
 
-// استدعاء الملفات حتى بدون إنترنت
 self.addEventListener('fetch', evt => {
   evt.respondWith(
     caches.match(evt.request).then(cacheRes => {
