@@ -143,46 +143,50 @@
         }
 
         function renderLog() {
-    // 1. التأكد من سحب البيانات صح من الذاكرة
     let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
     const container = document.getElementById('logContainer');
-    
-    // 2. مسح المحتوى القديم عشان ميكررش الكلام
     container.innerHTML = "";
 
-    // 3. التأكد إن فيه بيانات أصلاً
     if (Object.keys(logs).length === 0) {
-        container.innerHTML = "<div style='color:#666; padding:20px;'>لا يوجد سجلات حتى الآن</div>";
+        container.innerHTML = "<div style='color:#666; padding:20px;'>لا يوجد سجلات</div>";
         return;
     }
 
-    // 4. ترتيب الأيام من الأحدث للأقدم وعرضها
     Object.keys(logs).sort().reverse().forEach(date => {
         const totalSeconds = logs[date];
+        const d = new Date(date);
+        
+        // حساب اسم اليوم (السبت، الأحد...)
+        const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
+
+        // حساب الساعات
         let basic = totalSeconds > SHIFT_LIMIT ? SHIFT_LIMIT : totalSeconds;
         let ot = totalSeconds > SHIFT_LIMIT ? totalSeconds - SHIFT_LIMIT : 0;
-        
-        // تحويل الثواني لساعات ودقائق للعرض
-        let h = Math.floor(totalSeconds / 3600);
-        let m = Math.floor((totalSeconds % 3600) / 60);
+
+        // تنسيق الساعات للعرض
+        const fmt = (s) => `${Math.floor(s/3600)}س ${Math.floor((s%3600)/60)}د`;
 
         container.innerHTML += `
             <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
                 <div class="log-header">
-                    <span>يوم</span>
+                    <span>يوم ${dayName}</span>
                     <span>${date}</span>
                 </div>
-                <div class="log-details">
-                    <div class="detail-box">
-                        <span style="color:#666; font-size:10px;">إجمالي</span><br>
-                        <b style="font-size:14px;">${h}س ${m}د</b>
+                <div class="log-details" style="display: flex; justify-content: space-between; gap: 5px;">
+                    <div class="detail-box" style="flex:1;">
+                        <span style="color:#666; font-size:10px;">أساسي</span><br>
+                        <b style="color:#fff; font-size:11px;">${fmt(basic)}</b>
                     </div>
-                    <div class="detail-box">
+                    <div class="detail-box" style="flex:1;">
                         <span style="color:#666; font-size:10px;">إضافي</span><br>
-                        <b style="color:var(--success); font-size:14px;">${Math.floor(ot/3600)}س</b>
+                        <b style="color:var(--success); font-size:11px;">${fmt(ot)}</b>
+                    </div>
+                    <div class="detail-box" style="flex:1;">
+                        <span style="color:#666; font-size:10px;">إجمالي</span><br>
+                        <b style="color:#fff; font-size:11px;">${fmt(totalSeconds)}</b>
                     </div>
                 </div>
-                <span class="edit-icon" onclick="openEdit('${date}')">✏️</span>
+                <span class="edit-icon" onclick="openEdit('${date}')" style="font-size:12px;">✏️</span>
             </div>`;
     });
 }
