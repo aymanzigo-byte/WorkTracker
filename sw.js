@@ -1,4 +1,4 @@
-const CACHE_NAME = 'work-tracker-v12';
+const CACHE_NAME = 'work-tracker-v13';
 const assets = [
   './',
   './index.html',
