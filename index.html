@@ -3,11 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Smart V8</title>
+    <title>Work Tracker - Ultimate V9</title>
     <style>
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
         
+        /* الهيدر والترس */
+        .header { width: 100%; max-width: 350px; display: flex; justify-content: flex-end; padding-bottom: 10px; }
+        .settings-icon { font-size: 1.5rem; cursor: pointer; color: #666; transition: 0.3s; }
+        .settings-icon:hover { color: #fff; }
+
         .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
         .stat-label { font-size: 0.9rem; color: #888; }
@@ -18,8 +23,10 @@
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         
+        /* السجل */
         #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 10px; }
         .log-item { background: #111; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
+        .has-ot { border-right: 4px solid var(--success); background: #121a12; }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
         .log-details { display: flex; justify-content: space-between; gap: 5px; }
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
@@ -27,15 +34,20 @@
         .detail-val { font-size: 0.8rem; font-weight: bold; }
         .edit-icon { position: absolute; left: 10px; bottom: 10px; cursor: pointer; font-size: 1rem; opacity: 0.6; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
+        /* المودال */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
-        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; font-size: 1.2rem; box-sizing: border-box; }
-        .time-label { display: block; text-align: right; font-size: 0.8rem; color: #888; margin-top: 10px; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
         
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
+        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; }
     </style>
 </head>
 <body onload="checkMemory()">
+
+    <div class="header">
+        <span class="settings-icon" onclick="openModal('settingsModal')">⚙️</span>
+    </div>
 
     <div class="dashboard-card">
         <div class="stat-row"><span class="stat-label">ساعات اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
@@ -49,6 +61,16 @@
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="askPIN()">ابدأ العمل</button>
 
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <h3>الإعدادات</h3>
+            <div class="settings-item" onclick="changePIN()">تغيير رمز الدخول (PIN)</div>
+            <div class="settings-item" onclick="setEmail()">تسجيل إيميل التقارير</div>
+            <div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تصدير السجل لـ Excel 📥</div>
+            <button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button>
+        </div>
+    </div>
+
     <div id="pinModal" class="modal">
         <div class="modal-content">
             <h3>أدخل رمز الدخول</h3>
@@ -61,13 +83,7 @@
         <div class="modal-content">
             <h3>تعديل يدوي</h3>
             <p id="editDateLabel" style="font-size:0.8rem; color:var(--accent)"></p>
-            
-            <span class="time-label">وقت الحضور:</span>
-            <input type="time" id="timeIn">
-            
-            <span class="time-label">وقت الانصراف:</span>
-            <input type="time" id="timeOut">
-            
+            <input type="time" id="timeIn"><input type="time" id="timeOut">
             <button class="btn" style="width:100%; margin-top:20px" onclick="confirmEdit()">حفظ الساعات</button>
             <button class="view-btn" style="margin-top:10px" onclick="closeModal('editModal')">إلغاء</button>
         </div>
@@ -76,7 +92,6 @@
     <script>
         let seconds = 0, timerInterval = null, currentEditDate = '';
         const SHIFT_LIMIT = 8 * 3600;
-        const MASTER_PIN = "1234"; 
 
         function checkMemory() {
             updateMonthlyTotal();
@@ -86,23 +101,24 @@
             }
         }
 
-        function askPIN() {
-            document.getElementById('pinModal').style.display = 'flex';
-            document.getElementById('pinInput').value = '';
-            document.getElementById('pinInput').focus();
-        }
-
-        // الدخول التلقائي بمجرد كتابة 4 أرقام
+        function getPIN() { return localStorage.getItem('userPIN') || "1234"; }
+        function askPIN() { document.getElementById('pinModal').style.display='flex'; document.getElementById('pinInput').value=''; document.getElementById('pinInput').focus(); }
+        
         function checkPINAuto(val) {
             if (val.length === 4) {
-                if (val === MASTER_PIN) {
-                    closeModal('pinModal');
-                    toggleTimer();
-                } else {
-                    alert("الرمز غير صحيح!");
-                    document.getElementById('pinInput').value = '';
-                }
+                if (val === getPIN()) { closeModal('pinModal'); toggleTimer(); }
+                else { alert("خطأ!"); document.getElementById('pinInput').value=''; }
             }
+        }
+
+        function changePIN() {
+            let p = prompt("أدخل الرمز الجديد (4 أرقام):");
+            if(p && p.length === 4) { localStorage.setItem('userPIN', p); alert("تم التغيير!"); }
+        }
+
+        function setEmail() {
+            let e = prompt("أدخل الإيميل لاستلام التقارير:", localStorage.getItem('userEmail') || "");
+            if(e) { localStorage.setItem('userEmail', e); alert("تم حفظ الإيميل!"); }
         }
 
         function toggleTimer() {
@@ -110,7 +126,9 @@
                 localStorage.setItem('workStartTime', new Date());
                 startUI();
             } else {
+                const totalSec = seconds;
                 saveWorkSession();
+                sendEmailReport(totalSec); // إرسال الإيميل
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -122,12 +140,30 @@
             }
         }
 
-        function startUI() {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(updateTimer, 1000);
-            updateButtonUI(true);
+        function sendEmailReport(sec) {
+            const email = localStorage.getItem('userEmail');
+            if(!email) return;
+            const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
+            const body = `تقرير عمل ليوم: ${new Date().toLocaleDateString('ar-EG')}%0D%0Aإجمالي الساعات: ${h}س و ${m}د`;
+            window.location.href = `mailto:${email}?subject=تقرير العمل اليومي&body=${body}`;
         }
 
+        function exportToSheet() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            let csv = "Date,Total Hours\n";
+            for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'Work_Log.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function startUI() { if(timerInterval) clearInterval(timerInterval); timerInterval = setInterval(updateTimer, 1000); updateButtonUI(true); }
         function updateTimer() {
             seconds++;
             const ts = formatTime(seconds);
@@ -164,7 +200,7 @@
                 const s = logs[date], d = new Date(date);
                 let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s, ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
                 container.innerHTML += `
-                    <div class="log-item">
+                    <div class="log-item ${ot>0?'has-ot':''}">
                         <div class="log-header"><span>${d.toLocaleDateString('ar-EG',{weekday:'long'})}</span><span>${date}</span></div>
                         <div class="log-details">
                             <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${Math.floor(basic/3600)}س ${Math.floor((basic%3600)/60)}د</b></div>
@@ -176,49 +212,24 @@
             });
         }
 
-        function openEdit(date) {
-            currentEditDate = date;
-            document.getElementById('editDateLabel').innerText = "يوم: " + date;
-            document.getElementById('editModal').style.display = 'flex';
-        }
-
+        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = "يوم: " + date; document.getElementById('editModal').style.display = 'flex'; }
         function confirmEdit() {
-            let tIn = document.getElementById('timeIn').value;
-            let tOut = document.getElementById('timeOut').value;
-            
+            let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
             if (tIn && tOut) {
-                let start = new Date(`2000-01-01T${tIn}`);
-                let end = new Date(`2000-01-01T${tOut}`);
-                
-                // التعامل مع حالة الشفت اللي بيعدي نص الليل (مثلاً من 8 مساءً لـ 4 فجراً)
+                let start = new Date(`2000-01-01T${tIn}`), end = new Date(`2000-01-01T${tOut}`);
                 if (end < start) end.setDate(end.getDate() + 1);
-                
-                let diffInSeconds = (end - start) / 1000;
-                
                 let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-                logs[currentEditDate] = diffInSeconds;
+                logs[currentEditDate] = (end - start) / 1000;
                 localStorage.setItem('workLogs', JSON.stringify(logs));
-                
-                closeModal('editModal');
-                renderLog();
-                updateMonthlyTotal();
-            } else {
-                alert("يرجى إدخال وقت الحضور والانصراف");
+                closeModal('editModal'); renderLog(); updateMonthlyTotal();
             }
         }
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function toggleLog() { 
-            const c = document.getElementById('logContainer');
-            c.style.display = c.style.display === 'none' ? 'block' : 'none';
-            if(c.style.display === 'block') renderLog();
-        }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display === 'block') renderLog(); }
         function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
-        function updateButtonUI(run) {
-            const b = document.getElementById('mainBtn');
-            b.innerText = run ? "إنهاء العمل" : "ابدأ العمل";
-            run ? b.classList.add('stop') : b.classList.remove('stop');
-        }
+        function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; run ? b.classList.add('stop') : b.classList.remove('stop'); }
     </script>
 </body>
 </html>
