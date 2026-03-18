@@ -3,44 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Ultimate V9</title>
+    <title>Work Tracker - Ultimate V10</title>
     <style>
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
+        
+        /* تنسيق الصفحة الأساسي */
+        body { 
+            background: var(--bg); 
+            color: #fff; 
+            font-family: sans-serif; 
+            text-align: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding: 20px; 
+            margin: 0; 
+            height: 100vh; 
+            overflow: hidden; /* منع سكرول الصفحة كلها */
+            box-sizing: border-box;
+        }
         
         /* الهيدر والترس */
-        .header { width: 100%; max-width: 350px; display: flex; justify-content: flex-end; padding-bottom: 10px; }
+        .header { width: 100%; max-width: 350px; display: flex; justify-content: flex-end; padding-bottom: 10px; flex-shrink: 0; }
         .settings-icon { font-size: 1.5rem; cursor: pointer; color: #666; transition: 0.3s; }
-        .settings-icon:hover { color: #fff; }
 
-        .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
-        .stat-label { font-size: 0.9rem; color: #888; }
+        /* المربع الذهبي */
+        .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; flex-shrink: 0; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #222; }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { font-size: 0.85rem; color: #888; }
         .stat-value { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
 
-        #timer { font-size: 4rem; color: var(--primary); margin: 20px 0; font-weight: bold; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; }
+        /* العداد الكبير والزرار */
+        #timer { font-size: 3.8rem; color: var(--primary); margin: 15px 0; font-weight: bold; flex-shrink: 0; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; flex-shrink: 0; transition: 0.3s; }
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         
-        /* السجل */
-        #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 10px; }
-        .log-item { background: #111; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
-        .has-ot { border-right: 4px solid var(--success); background: #121a12; }
-        .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        .log-details { display: flex; justify-content: space-between; gap: 5px; }
-        .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
-        .detail-label { color: #666; display: block; font-size: 0.65rem; margin-bottom: 3px; }
-        .detail-val { font-size: 0.8rem; font-weight: bold; }
-        .edit-icon { position: absolute; left: 10px; bottom: 10px; cursor: pointer; font-size: 1rem; opacity: 0.6; }
+        /* زر السجل ومنطقة السكرول */
+        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; flex-shrink: 0; }
+        
+        #logContainer { 
+            width: 100%; 
+            max-width: 350px; 
+            display: none; 
+            margin-top: 5px; 
+            overflow-y: auto; 
+            flex-grow: 1; /* ياخد كل المساحة المتبقية */
+            padding-left: 5px;
+        }
 
-        /* المودال */
+        /* تجميل شكل السكرول بار */
+        #logContainer::-webkit-scrollbar { width: 4px; }
+        #logContainer::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+
+        /* كروت السجل */
+        .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
+        .has-ot { border-right: 4px solid var(--success); background: #121a12; }
+        .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
+        .log-details { display: flex; justify-content: space-between; gap: 4px; }
+        .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
+        .detail-label { color: #666; display: block; font-size: 0.6rem; margin-bottom: 2px; }
+        .detail-val { font-size: 0.75rem; font-weight: bold; }
+        .edit-icon { position: absolute; left: 8px; bottom: 8px; cursor: pointer; font-size: 0.9rem; opacity: 0.5; }
+
+        /* المودال (النوافذ المنبثقة) */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
-        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
-        
-        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
-        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; font-size: 1.1rem; }
+        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; text-align: right; }
     </style>
 </head>
 <body onload="checkMemory()">
@@ -56,6 +87,7 @@
     </div>
 
     <button class="view-btn" onclick="toggleLog()">عرض السجل بالتفصيل ⬇️</button>
+    
     <div id="logContainer"></div>
 
     <div id="timer">00:00:00</div>
@@ -107,7 +139,7 @@
         function checkPINAuto(val) {
             if (val.length === 4) {
                 if (val === getPIN()) { closeModal('pinModal'); toggleTimer(); }
-                else { alert("خطأ!"); document.getElementById('pinInput').value=''; }
+                else { alert("الرمز خطأ!"); document.getElementById('pinInput').value=''; }
             }
         }
 
@@ -117,8 +149,8 @@
         }
 
         function setEmail() {
-            let e = prompt("أدخل الإيميل لاستلام التقارير:", localStorage.getItem('userEmail') || "");
-            if(e) { localStorage.setItem('userEmail', e); alert("تم حفظ الإيميل!"); }
+            let e = prompt("أدخل الإيميل:", localStorage.getItem('userEmail') || "");
+            if(e) { localStorage.setItem('userEmail', e); alert("تم الحفظ!"); }
         }
 
         function toggleTimer() {
@@ -128,7 +160,7 @@
             } else {
                 const totalSec = seconds;
                 saveWorkSession();
-                sendEmailReport(totalSec); // إرسال الإيميل
+                sendEmailReport(totalSec);
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -145,7 +177,7 @@
             if(!email) return;
             const h = Math.floor(sec/3600), m = Math.floor((sec%3600)/60);
             const body = `تقرير عمل ليوم: ${new Date().toLocaleDateString('ar-EG')}%0D%0Aإجمالي الساعات: ${h}س و ${m}د`;
-            window.location.href = `mailto:${email}?subject=تقرير العمل اليومي&body=${body}`;
+            window.location.href = `mailto:${email}?subject=تقرير العمل&body=${body}`;
         }
 
         function exportToSheet() {
@@ -155,15 +187,11 @@
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
-            a.setAttribute('hidden', '');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'Work_Log.csv');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+            a.href = url; a.download = 'Work_Log.csv'; a.click();
         }
 
         function startUI() { if(timerInterval) clearInterval(timerInterval); timerInterval = setInterval(updateTimer, 1000); updateButtonUI(true); }
+        
         function updateTimer() {
             seconds++;
             const ts = formatTime(seconds);
@@ -213,6 +241,7 @@
         }
 
         function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = "يوم: " + date; document.getElementById('editModal').style.display = 'flex'; }
+        
         function confirmEdit() {
             let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
             if (tIn && tOut) {
@@ -227,9 +256,20 @@
 
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display === 'block') renderLog(); }
+        
+        function toggleLog() { 
+            const c = document.getElementById('logContainer'); 
+            c.style.display = c.style.display === 'none' ? 'block' : 'none'; 
+            if(c.style.display === 'block') renderLog(); 
+        }
+
         function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
-        function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; run ? b.classList.add('stop') : b.classList.remove('stop'); }
+        
+        function updateButtonUI(run) { 
+            const b = document.getElementById('mainBtn'); 
+            b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; 
+            run ? b.classList.add('stop') : b.classList.remove('stop'); 
+        }
     </script>
 </body>
 </html>
