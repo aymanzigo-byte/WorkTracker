@@ -143,16 +143,49 @@
         }
 
         function renderLog() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            const container = document.getElementById('logContainer');
-            container.innerHTML = "";
-            Object.keys(logs).sort().reverse().forEach(date => {
-                const s = logs[date];
-                let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s, ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
-                container.innerHTML += `<div class="log-item ${ot>0?'has-ot':''}"><div class="log-header"><span>يوم</span><span>${date}</span></div><div class="log-details"><div class="detail-box"><span>أساسي</span><br><b>${Math.floor(basic/3600)}س</b></div><div class="detail-box"><span>إضافي</span><br><b style="color:var(--success)">${Math.floor(ot/3600)}س</b></div></div><span class="edit-icon" onclick="openEdit('${date}')">✏️</span></div>`;
-            });
-        }
+    // 1. التأكد من سحب البيانات صح من الذاكرة
+    let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+    const container = document.getElementById('logContainer');
+    
+    // 2. مسح المحتوى القديم عشان ميكررش الكلام
+    container.innerHTML = "";
 
+    // 3. التأكد إن فيه بيانات أصلاً
+    if (Object.keys(logs).length === 0) {
+        container.innerHTML = "<div style='color:#666; padding:20px;'>لا يوجد سجلات حتى الآن</div>";
+        return;
+    }
+
+    // 4. ترتيب الأيام من الأحدث للأقدم وعرضها
+    Object.keys(logs).sort().reverse().forEach(date => {
+        const totalSeconds = logs[date];
+        let basic = totalSeconds > SHIFT_LIMIT ? SHIFT_LIMIT : totalSeconds;
+        let ot = totalSeconds > SHIFT_LIMIT ? totalSeconds - SHIFT_LIMIT : 0;
+        
+        // تحويل الثواني لساعات ودقائق للعرض
+        let h = Math.floor(totalSeconds / 3600);
+        let m = Math.floor((totalSeconds % 3600) / 60);
+
+        container.innerHTML += `
+            <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
+                <div class="log-header">
+                    <span>يوم</span>
+                    <span>${date}</span>
+                </div>
+                <div class="log-details">
+                    <div class="detail-box">
+                        <span style="color:#666; font-size:10px;">إجمالي</span><br>
+                        <b style="font-size:14px;">${h}س ${m}د</b>
+                    </div>
+                    <div class="detail-box">
+                        <span style="color:#666; font-size:10px;">إضافي</span><br>
+                        <b style="color:var(--success); font-size:14px;">${Math.floor(ot/3600)}س</b>
+                    </div>
+                </div>
+                <span class="edit-icon" onclick="openEdit('${date}')">✏️</span>
+            </div>`;
+    });
+}
         function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = date; openModal('editModal'); }
         function confirmEdit() {
             let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
