@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Work Tracker - Pro V7</title>
+    <title>Work Tracker - Smart V8</title>
     <style>
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; min-height: 100vh; }
         
-        /* المربع الذهبي */
         .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 5px; border-bottom: 1px solid #222; }
         .stat-label { font-size: 0.9rem; color: #888; }
@@ -19,7 +18,6 @@
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         
-        /* السجل المطور */
         #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 10px; }
         .log-item { background: #111; border: 1px solid #222; padding: 15px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.9rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
@@ -29,10 +27,10 @@
         .detail-val { font-size: 0.8rem; font-weight: bold; }
         .edit-icon { position: absolute; left: 10px; bottom: 10px; cursor: pointer; font-size: 1rem; opacity: 0.6; }
 
-        /* نافذة التعديل والـ PIN */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 80%; max-width: 300px; border: 1px solid #333; }
-        .modal-content input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; font-size: 1.2rem; box-sizing: border-box; }
+        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
+        .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; font-size: 1.2rem; box-sizing: border-box; }
+        .time-label { display: block; text-align: right; font-size: 0.8rem; color: #888; margin-top: 10px; }
         
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
     </style>
@@ -54,18 +52,23 @@
     <div id="pinModal" class="modal">
         <div class="modal-content">
             <h3>أدخل رمز الدخول</h3>
-            <input type="password" id="pinInput" placeholder="****" inputmode="numeric">
-            <button class="btn" style="width:100%" onclick="confirmPIN()">دخول</button>
+            <input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)">
             <button class="view-btn" style="margin-top:10px" onclick="closeModal('pinModal')">إلغاء</button>
         </div>
     </div>
 
     <div id="editModal" class="modal">
         <div class="modal-content">
-            <h3>تعديل ساعات اليوم</h3>
+            <h3>تعديل يدوي</h3>
             <p id="editDateLabel" style="font-size:0.8rem; color:var(--accent)"></p>
-            <input type="number" id="editInput" placeholder="أدخل الساعات (مثلاً 9.5)">
-            <button class="btn" style="width:100%" onclick="confirmEdit()">حفظ التعديل</button>
+            
+            <span class="time-label">وقت الحضور:</span>
+            <input type="time" id="timeIn">
+            
+            <span class="time-label">وقت الانصراف:</span>
+            <input type="time" id="timeOut">
+            
+            <button class="btn" style="width:100%; margin-top:20px" onclick="confirmEdit()">حفظ الساعات</button>
             <button class="view-btn" style="margin-top:10px" onclick="closeModal('editModal')">إلغاء</button>
         </div>
     </div>
@@ -73,7 +76,7 @@
     <script>
         let seconds = 0, timerInterval = null, currentEditDate = '';
         const SHIFT_LIMIT = 8 * 3600;
-        const MASTER_PIN = "1234"; // الباسورد بتاعك
+        const MASTER_PIN = "1234"; 
 
         function checkMemory() {
             updateMonthlyTotal();
@@ -85,16 +88,20 @@
 
         function askPIN() {
             document.getElementById('pinModal').style.display = 'flex';
+            document.getElementById('pinInput').value = '';
             document.getElementById('pinInput').focus();
         }
 
-        function confirmPIN() {
-            if (document.getElementById('pinInput').value === MASTER_PIN) {
-                closeModal('pinModal');
-                document.getElementById('pinInput').value = '';
-                toggleTimer();
-            } else {
-                alert("الرمز غير صحيح!");
+        // الدخول التلقائي بمجرد كتابة 4 أرقام
+        function checkPINAuto(val) {
+            if (val.length === 4) {
+                if (val === MASTER_PIN) {
+                    closeModal('pinModal');
+                    toggleTimer();
+                } else {
+                    alert("الرمز غير صحيح!");
+                    document.getElementById('pinInput').value = '';
+                }
             }
         }
 
@@ -171,19 +178,32 @@
 
         function openEdit(date) {
             currentEditDate = date;
-            document.getElementById('editDateLabel').innerText = "تعديل يوم: " + date;
+            document.getElementById('editDateLabel').innerText = "يوم: " + date;
             document.getElementById('editModal').style.display = 'flex';
         }
 
         function confirmEdit() {
-            let val = document.getElementById('editInput').value;
-            if (val) {
+            let tIn = document.getElementById('timeIn').value;
+            let tOut = document.getElementById('timeOut').value;
+            
+            if (tIn && tOut) {
+                let start = new Date(`2000-01-01T${tIn}`);
+                let end = new Date(`2000-01-01T${tOut}`);
+                
+                // التعامل مع حالة الشفت اللي بيعدي نص الليل (مثلاً من 8 مساءً لـ 4 فجراً)
+                if (end < start) end.setDate(end.getDate() + 1);
+                
+                let diffInSeconds = (end - start) / 1000;
+                
                 let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-                logs[currentEditDate] = parseFloat(val) * 3600;
+                logs[currentEditDate] = diffInSeconds;
                 localStorage.setItem('workLogs', JSON.stringify(logs));
+                
                 closeModal('editModal');
                 renderLog();
                 updateMonthlyTotal();
+            } else {
+                alert("يرجى إدخال وقت الحضور والانصراف");
             }
         }
 
