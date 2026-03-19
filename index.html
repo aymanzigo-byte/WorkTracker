@@ -91,22 +91,28 @@
         }
 
         function toggleTimer() {
-            if (!timerInterval) {
-                localStorage.setItem('workStartTime', new Date().toISOString());
-                startUI();
-            } else {
-                saveWorkSession();
-                syncWithGoogleSheet(seconds);
-                clearInterval(timerInterval);
-                timerInterval = null;
-                localStorage.removeItem('workStartTime');
-                seconds = 0;
-                document.getElementById('timer').innerText = "00:00:00";
-                updateButtonUI(false);
-                updateMonthlyTotal();
-                if(document.getElementById('logContainer').style.display === 'block') renderLog();
-            }
-        }
+    if (!timerInterval) {
+        localStorage.setItem('workStartTime', new Date().toISOString());
+        startUI();
+    } else {
+        const finalSec = seconds; // حفظ الثواني قبل تصفير العداد
+        saveWorkSession();
+        
+        // إغلاق العداد وتصفيره
+        clearInterval(timerInterval);
+        timerInterval = null;
+        localStorage.removeItem('workStartTime');
+        seconds = 0;
+        document.getElementById('timer').innerText = "00:00:00";
+        updateButtonUI(false);
+        updateMonthlyTotal();
+
+        // إرسال تلقائي وفوري للجوجل شيت مع إظهار الإشعار
+        syncWithGoogleSheet(finalSec);
+        
+        if(document.getElementById('logContainer').style.display === 'block') renderLog();
+    }
+}
 
         function startUI() { 
             if(timerInterval) clearInterval(timerInterval); 
@@ -214,7 +220,47 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = 'Work_Log.csv'; a.click();
         }
-        function syncWithGoogleSheet(sec) { if (!SCRIPT_URL.includes("رابط")) fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ date: new Date().toLocaleDateString(), hours: (sec/3600).toFixed(2) }) }); }
+        function syncWithGoogleSheet(sec) {
+    if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbwsBc7pte6-dQ5IX0ULlODmKHsNxXVInz8zzQnv-fs4Ud099Gv867qHi1PkQu_JCntq/exec")) {
+        console.log("رابط السكربت غير مضبوط");
+        return;
+    }
+
+    const date = new Date().toLocaleDateString('ar-EG');
+    const hours = (sec / 3600).toFixed(2);
+
+    // الإرسال في الخلفية
+    fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors', // عشان ميعملش مشاكل مع الحماية ويبعت بصمت
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: date, hours: hours })
+    }).then(() => {
+        // إظهار الإشعار اللي طلبته فور النجاح
+        showToast("تم التسجيل وإرسال البيانات بنجاح ✅");
+    }).catch(err => {
+        console.error("خطأ في الإرسال:", err);
+        showToast("فشل الإرسال التلقائي.. تم الحفظ محلياً");
+    });
+}
+        function showToast(message) {
+    // إنشاء عنصر الإشعار
+    const toast = document.createElement("div");
+    toast.innerText = message;
+    toast.style.cssText = `
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+        background: var(--success); color: white; padding: 10px 20px;
+        border-radius: 50px; font-size: 14px; z-index: 10000;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: opacity 0.5s;
+    `;
+    document.body.appendChild(toast);
+
+    // إخفاء الإشعار بعد 3 ثواني
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+}
     </script>
 </body>
 </html>
