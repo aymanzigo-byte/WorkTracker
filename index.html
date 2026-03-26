@@ -17,67 +17,57 @@
         .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 5px; border-bottom: 1px solid #222; }
         .stat-value { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
         #timer { font-size: 3.8rem; color: var(--primary); margin: 15px 0; font-weight: bold; flex-shrink: 0; }
-        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; flex-shrink: 0; transition: 0.2s; }
+        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; margin-bottom: 10px; transition: 0.2s; }
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
-        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; flex-shrink: 0; }
+        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
         #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         #logContainer::-webkit-scrollbar { width: 4px; }
         #logContainer::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
         .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
-        .has-ot { border-right: 4px solid var(--success); background: #121a12; }
+        .has-ot { border-right: 4px solid var(--success); }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
-        .log-details { display: flex; justify-content: space-between; gap: 4px; }
+        .log-details { display: flex; justify-content: space-between; gap: 5px; }
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
-        .detail-val { font-size: 0.75rem; font-weight: bold; }
-        .edit-icon { position: absolute; left: 8px; bottom: 8px; cursor: pointer; font-size: 0.9rem; opacity: 0.5; }
+        .detail-label { color: #666; display: block; font-size: 0.6rem; }
+        .detail-val { font-size: 0.7rem; font-weight: bold; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
         .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
-        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; text-align: right; }
+        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; }
     </style>
 </head>
 <body onload="checkMemory()">
+
     <div class="header"><span class="settings-icon" onclick="openModal('settingsModal')">⚙️</span></div>
+
     <div class="dashboard-card">
-        <div class="stat-row"><span class="stat-label">ساعات اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
-        <div class="stat-row"><span class="stat-label">الإضافي (OT):</span><span id="otDisplay" class="stat-value">00:00:00</span></div>
-        <div class="stat-row"><span class="stat-label">إجمالي الشهر:</span><span id="monthlyDisplay" class="stat-value" style="color: var(--accent);">0س 0د</span></div>
+        <div class="stat-row"><span>ساعات اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
+        <div class="stat-row"><span>الإضافي:</span><span id="otDisplay" class="stat-value">00:00:00</span></div>
+        <div class="stat-row"><span>إجمالي الشهر:</span><span id="monthlyDisplay" class="stat-value" style="color:var(--accent);">0س 0د</span></div>
     </div>
+
     <button class="view-btn" onclick="toggleLog()">عرض السجل بالتفصيل ⬇️</button>
     <div id="logContainer"></div>
+
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="askPIN()">ابدأ العمل</button>
 
-    <div id="settingsModal" class="modal"><div class="modal-content"><h3>الإعدادات</h3><div class="settings-item" onclick="changePIN()">تغيير رمز (PIN)</div><div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تصدير لـ Excel 📥</div><button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button></div></div>
+    <div id="settingsModal" class="modal"><div class="modal-content"><h3>الإعدادات</h3><div class="settings-item" onclick="changePIN()">تغيير الرمز (PIN)</div><div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تصدير لـ Excel 📥</div><button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button></div></div>
     <div id="pinModal" class="modal"><div class="modal-content"><h3>أدخل الرمز</h3><input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)"><button class="view-btn" style="margin-top:10px" onclick="closeModal('pinModal')">إلغاء</button></div></div>
-    <div id="editModal" class="modal"><div class="modal-content"><h3>تعديل يدوي</h3><p id="editDateLabel"></p><input type="time" id="timeIn"><input type="time" id="timeOut"><button class="btn" style="width:100%; margin-top:20px" onclick="confirmEdit()">حفظ</button><button class="view-btn" style="margin-top:10px" onclick="closeModal('editModal')">إلغاء</button></div></div>
+    <div id="editModal" class="modal"><div class="modal-content"><h3>تعديل يدوي</h3><p id="editDateLabel" style="color:var(--accent)"></p><input type="time" id="timeIn"><input type="time" id="timeOut"><button class="btn" style="width:100%; margin-top:10px; background:var(--primary)" onclick="confirmEdit()">حفظ</button><button class="view-btn" onclick="closeModal('editModal')">إلغاء</button></div></div>
 
     <script>
-        // كود تنظيف الكاش الإجباري
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(regs => { for(let reg of regs) reg.unregister(); });
-        }
-
-        const SCRIPT_URL = "حط_رابط_السكربت_هنا"; 
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MiD6KRa_w35y9HINPkyeU-LONvCoxgFFqGeEbkRYsJuuMTOhg6SNYcLu6mCjO18P/exec"; 
         let seconds = 0, timerInterval = null, currentEditDate = '';
         const SHIFT_LIMIT = 8 * 3600;
 
+        // 1. الأساسيات
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-
-        function checkMemory() {
-            updateMonthlyTotal();
-            const savedStart = localStorage.getItem('workStartTime');
-            if (savedStart) {
-                seconds = Math.floor((new Date() - new Date(savedStart)) / 1000);
-                startUI();
-            }
-        }
-
         function getPIN() { return localStorage.getItem('userPIN') || "1234"; }
         function askPIN() { openModal('pinModal'); document.getElementById('pinInput').value=''; document.getElementById('pinInput').focus(); }
-        
+
         function checkPINAuto(val) {
             if (val.length === 4) {
                 if (val === getPIN()) { closeModal('pinModal'); toggleTimer(); }
@@ -85,43 +75,36 @@
             }
         }
 
-        function changePIN() {
-            let p = prompt("الرمز الجديد (4 أرقام):");
-            if(p && p.length === 4) { localStorage.setItem('userPIN', p); alert("تم التغيير!"); }
-        }
-
+        // 2. المحرك الرئيسي
         function toggleTimer() {
-    if (!timerInterval) {
-        localStorage.setItem('workStartTime', new Date().toISOString());
-        startUI();
-    } else {
-        const finalSec = seconds; // حفظ الثواني قبل تصفير العداد
-        saveWorkSession();
-        
-        // إغلاق العداد وتصفيره
-        clearInterval(timerInterval);
-        timerInterval = null;
-        localStorage.removeItem('workStartTime');
-        seconds = 0;
-        document.getElementById('timer').innerText = "00:00:00";
-        updateButtonUI(false);
-        updateMonthlyTotal();
-
-        // إرسال تلقائي وفوري للجوجل شيت مع إظهار الإشعار
-        syncWithGoogleSheet(finalSec);
-        
-        if(document.getElementById('logContainer').style.display === 'block') renderLog();
-    }
-}
+            if (!timerInterval) {
+                localStorage.setItem('workStartTime', new Date().toISOString());
+                startUI();
+            } else {
+                const finalSec = seconds;
+                saveWorkSession();
+                syncWithGoogleSheet(finalSec); // الإرسال التلقائي
+                clearInterval(timerInterval);
+                timerInterval = null;
+                localStorage.removeItem('workStartTime');
+                seconds = 0;
+                document.getElementById('timer').innerText = "00:00:00";
+                updateButtonUI(false);
+                updateMonthlyTotal();
+                if(document.getElementById('logContainer').style.display === 'block') renderLog();
+            }
+        }
 
         function startUI() { 
             if(timerInterval) clearInterval(timerInterval); 
-            timerInterval = setInterval(updateTimer, 1000); 
+            timerInterval = setInterval(() => {
+                seconds++;
+                updateDisplays();
+            }, 1000); 
             updateButtonUI(true); 
         }
 
-        function updateTimer() {
-            seconds++;
+        function updateDisplays() {
             const ts = formatTime(seconds);
             document.getElementById('timer').innerText = ts;
             document.getElementById('dailyDisplay').innerText = ts;
@@ -129,6 +112,50 @@
                 document.getElementById('otDisplay').innerText = formatTime(seconds - SHIFT_LIMIT);
                 document.getElementById('otDisplay').style.color = "var(--success)";
             }
+        }
+
+        // 3. السجل والبيانات
+        function renderLog() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            const container = document.getElementById('logContainer');
+            container.innerHTML = "";
+            Object.keys(logs).sort().reverse().forEach(date => {
+                const s = logs[date];
+                const d = new Date(date);
+                const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
+                let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s;
+                let ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
+                const fmt = (sec) => `${Math.floor(sec/3600)}س ${Math.floor((sec%3600)/60)}د`;
+
+                container.innerHTML += `
+                    <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
+                        <div class="log-header"><span>يوم ${dayName}</span><span>${date}</span></div>
+                        <div class="log-details">
+                            <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${fmt(basic)}</b></div>
+                            <div class="detail-box"><span class="detail-label">إضافي</span><b class="detail-val" style="color:var(--success)">${fmt(ot)}</b></div>
+                            <div class="detail-box"><span class="detail-label">إجمالي</span><b class="detail-val">${fmt(s)}</b></div>
+                        </div>
+                        <span style="position:absolute;left:8px;bottom:5px;cursor:pointer;opacity:0.5" onclick="openEdit('${date}')">✏️</span>
+                    </div>`;
+            });
+        }
+
+        function syncWithGoogleSheet(sec) {
+            if (!SCRIPT_URL || SCRIPT_URL.includes("رابط")) return;
+            const hours = (sec / 3600).toFixed(2);
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                body: JSON.stringify({ date: new Date().toLocaleDateString('ar-EG'), hours: hours })
+            }).then(() => showToast("تم الحفظ والإرسال بنجاح ✅"));
+        }
+
+        function showToast(msg) {
+            const t = document.createElement("div");
+            t.innerText = msg;
+            t.style.cssText = `position:fixed;bottom:50px;left:50%;transform:translateX(-50%);background:#2ecc71;color:white;padding:10px 20px;border-radius:50px;z-index:9999;font-size:14px;`;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
         }
 
         function saveWorkSession() {
@@ -148,55 +175,25 @@
             document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
         }
 
-        function renderLog() {
-    let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-    const container = document.getElementById('logContainer');
-    container.innerHTML = "";
+        function checkMemory() {
+            updateMonthlyTotal();
+            const s = localStorage.getItem('workStartTime');
+            if (s) { seconds = Math.floor((new Date() - new Date(s)) / 1000); startUI(); }
+        }
 
-    if (Object.keys(logs).length === 0) {
-        container.innerHTML = "<div style='color:#666; padding:20px;'>لا يوجد سجلات</div>";
-        return;
-    }
-
-    Object.keys(logs).sort().reverse().forEach(date => {
-        const totalSeconds = logs[date];
-        const d = new Date(date);
-        
-        // حساب اسم اليوم (السبت، الأحد...)
-        const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
-
-        // حساب الساعات
-        let basic = totalSeconds > SHIFT_LIMIT ? SHIFT_LIMIT : totalSeconds;
-        let ot = totalSeconds > SHIFT_LIMIT ? totalSeconds - SHIFT_LIMIT : 0;
-
-        // تنسيق الساعات للعرض
-        const fmt = (s) => `${Math.floor(s/3600)}س ${Math.floor((s%3600)/60)}د`;
-
-        container.innerHTML += `
-            <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
-                <div class="log-header">
-                    <span>يوم ${dayName}</span>
-                    <span>${date}</span>
-                </div>
-                <div class="log-details" style="display: flex; justify-content: space-between; gap: 5px;">
-                    <div class="detail-box" style="flex:1;">
-                        <span style="color:#666; font-size:10px;">أساسي</span><br>
-                        <b style="color:#fff; font-size:11px;">${fmt(basic)}</b>
-                    </div>
-                    <div class="detail-box" style="flex:1;">
-                        <span style="color:#666; font-size:10px;">إضافي</span><br>
-                        <b style="color:var(--success); font-size:11px;">${fmt(ot)}</b>
-                    </div>
-                    <div class="detail-box" style="flex:1;">
-                        <span style="color:#666; font-size:10px;">إجمالي</span><br>
-                        <b style="color:#fff; font-size:11px;">${fmt(totalSeconds)}</b>
-                    </div>
-                </div>
-                <span class="edit-icon" onclick="openEdit('${date}')" style="font-size:12px;">✏️</span>
-            </div>`;
-    });
-}
-        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = date; openModal('editModal'); }
+        function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
+        function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; b.className = run ? "btn stop" : "btn"; }
+        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display==='block') renderLog(); }
+        function changePIN() { let p = prompt("الرمز الجديد:"); if(p && p.length===4) { localStorage.setItem('userPIN', p); alert("تم!"); } }
+        function exportToSheet() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            let csv = "Date,Total Hours\n";
+            for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'Work_Log.csv'; a.click();
+        }
+        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = "يوم: " + date; openModal('editModal'); }
         function confirmEdit() {
             let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
             if (tIn && tOut) {
@@ -208,59 +205,6 @@
                 closeModal('editModal'); renderLog(); updateMonthlyTotal();
             }
         }
-
-        function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
-        function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; run ? b.classList.add('stop') : b.classList.remove('stop'); }
-        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display === 'block') renderLog(); }
-        function exportToSheet() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            let csv = "Date,Total Hours\n";
-            for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'Work_Log.csv'; a.click();
-        }
-        function syncWithGoogleSheet(sec) {
-    if (!SCRIPT_URL || SCRIPT_URL.includes("https://script.google.com/macros/s/AKfycbwsBc7pte6-dQ5IX0ULlODmKHsNxXVInz8zzQnv-fs4Ud099Gv867qHi1PkQu_JCntq/exec")) {
-        console.log("رابط السكربت غير مضبوط");
-        return;
-    }
-
-    const date = new Date().toLocaleDateString('ar-EG');
-    const hours = (sec / 3600).toFixed(2);
-
-    // الإرسال في الخلفية
-    fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors', // عشان ميعملش مشاكل مع الحماية ويبعت بصمت
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: date, hours: hours })
-    }).then(() => {
-        // إظهار الإشعار اللي طلبته فور النجاح
-        showToast("تم التسجيل وإرسال البيانات بنجاح ✅");
-    }).catch(err => {
-        console.error("خطأ في الإرسال:", err);
-        showToast("فشل الإرسال التلقائي.. تم الحفظ محلياً");
-    });
-}
-        function showToast(message) {
-    // إنشاء عنصر الإشعار
-    const toast = document.createElement("div");
-    toast.innerText = message;
-    toast.style.cssText = `
-        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-        background: var(--success); color: white; padding: 10px 20px;
-        border-radius: 50px; font-size: 14px; z-index: 10000;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: opacity 0.5s;
-    `;
-    document.body.appendChild(toast);
-
-    // إخفاء الإشعار بعد 3 ثواني
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        setTimeout(() => toast.remove(), 500);
-    }, 3000);
-}
     </script>
 </body>
 </html>
