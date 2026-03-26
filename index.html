@@ -65,7 +65,10 @@
         // 1. الأساسيات
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function getPIN() { return localStorage.getItem('userPIN') || "1234"; }
+        // هنا هنخلي الباسورد الافتراضي هو اللي إنت بتحبه بدل 1234
+function getPIN() { 
+    return localStorage.getItem('userPIN') || "2589"; // غير 2026 للباسورد اللي بتستخدمه دايماً
+}
         function askPIN() { openModal('pinModal'); document.getElementById('pinInput').value=''; document.getElementById('pinInput').focus(); }
 
         function checkPINAuto(val) {
@@ -184,7 +187,15 @@
         function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
         function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; b.className = run ? "btn stop" : "btn"; }
         function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display==='block') renderLog(); }
-        function changePIN() { let p = prompt("الرمز الجديد:"); if(p && p.length===4) { localStorage.setItem('userPIN', p); alert("تم!"); } }
+        function changePIN() { 
+    let p = prompt("الرمز الجديد:"); 
+    if(p && p.length === 4) { 
+        localStorage.setItem('userPIN', p); 
+        // سطر إضافي للتأكيد
+        console.log("PIN Saved:", p);
+        alert("تم حفظ الرمز الجديد بنجاح!"); 
+    } 
+}
         function exportToSheet() {
             let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
             let csv = "Date,Total Hours\n";
