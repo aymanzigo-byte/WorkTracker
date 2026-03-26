@@ -3,11 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work Tracker Pro v17</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#000000">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Work Tracker Pro v18</title>
     <style>
         :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
         body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0; height: 100vh; overflow: hidden; box-sizing: border-box; }
@@ -21,8 +17,6 @@
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
-        
-        /* تنسيق السجلات */
         #logContainer, #archiveDetailsContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
         .has-ot { border-right: 4px solid var(--success); }
@@ -31,12 +25,9 @@
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
         .detail-label { color: #666; display: block; font-size: 0.6rem; }
         .detail-val { font-size: 0.7rem; font-weight: bold; }
-
-        /* الشاشات المنبثقة */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; max-height: 85vh; overflow-y: auto; }
         .full-screen-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
-        
         .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
         .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; text-align: right; }
     </style>
@@ -79,51 +70,56 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MiD6KRa_w35y9HINPkyeU-LONvCoxgFFqGeEbkRYsJuuMTOhg6SNYcLu6mCjO18P/exec"; 
         const DEFAULT_PIN = "2589"; 
         const SHIFT_LIMIT = 8 * 3600; 
-
         let seconds = 0, timerInterval = null, currentEditDate = '';
 
-        // --- دوال المودال ---
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function getPIN() { return localStorage.getItem('userPIN') || DEFAULT_PIN; }
 
+        // --- تصليح زرار الحضور ---
+        function askPIN() {
+            // لو العداد شغال أصلاً، خليه يطلب الباسورد عشان يقفل (انصراف)
+            // لو واقف، يطلب الباسورد عشان يبدأ (حضور)
+            document.getElementById('pinInput').value = "";
+            openModal('pinModal');
+            setTimeout(() => document.getElementById('pinInput').focus(), 100);
+        }
+
         function checkPINAuto(val) {
             if (val.length === 4) {
-                if (val === getPIN()) { closeModal('pinModal'); toggleTimer(); }
-                else { alert("خطأ!"); document.getElementById('pinInput').value=''; }
+                if (val === getPIN()) {
+                    closeModal('pinModal');
+                    toggleTimer(); // دي الدالة اللي كانت "تايهة"
+                } else {
+                    alert("الرمز خطأ!");
+                    document.getElementById('pinInput').value = '';
+                }
             }
         }
 
-        // --- منطق الحسابات الذكي (26 لـ 25) ---
         function getPeriodInfo(dateObj) {
             const d = new Date(dateObj);
             const day = d.getDate();
             let month = d.getMonth();
             let year = d.getFullYear();
-            
-            // لو اليوم 26 أو أكتر، يبقى إحنا في "دورة" الشهر اللي جاي
-            // مثال: 26 مارس -> يتبع دورة أبريل (اللي بتخلص 25 أبريل)
-            if (day >= 26) { month++; }
+            if (day >= 26) month++;
             if (month > 11) { month = 0; year++; }
-            
             const periodDate = new Date(year, month, 1);
-            const monthLabel = periodDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-            const periodKey = `${year}-${month + 1}`;
-            return { monthLabel, periodKey };
+            return { 
+                monthLabel: periodDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }),
+                periodKey: `${year}-${month + 1}`
+            };
         }
 
-        // --- المحرك الرئيسي ---
         function toggleTimer() {
             if (!timerInterval) {
                 localStorage.setItem('workStartTime', new Date().toISOString());
                 startUI();
             } else {
                 const finalSec = seconds;
-                const startTime = new Date(localStorage.getItem('workStartTime'));
-                
-                saveWorkSession(startTime, finalSec);
+                const startStr = localStorage.getItem('workStartTime');
+                saveWorkSession(new Date(startStr), finalSec);
                 syncWithGoogleSheet(finalSec);
-                
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -133,102 +129,6 @@
                 updateMonthlyTotal();
                 if(document.getElementById('logContainer').style.display === 'block') renderLog();
             }
-        }
-
-        function saveWorkSession(start, sec) {
-            const dStr = `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            logs[dStr] = (logs[dStr] || 0) + sec;
-            localStorage.setItem('workLogs', JSON.stringify(logs));
-        }
-
-        // --- الأرشيف العام (شاشة منفصلة) ---
-        function openArchiveScreen() {
-            closeModal('settingsModal');
-            document.getElementById('archiveScreen').style.display = 'flex';
-            renderArchiveList();
-        }
-
-        function closeArchiveScreen() {
-            document.getElementById('archiveScreen').style.display = 'none';
-            document.getElementById('archiveDetailsContainer').style.display = 'none';
-            document.getElementById('archiveList').style.display = 'block';
-        }
-
-        function renderArchiveList() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            const list = document.getElementById('archiveList');
-            list.innerHTML = "";
-            
-            let periods = {};
-            Object.keys(logs).forEach(date => {
-                const info = getPeriodInfo(new Date(date));
-                if (!periods[info.periodKey]) periods[info.periodKey] = info.monthLabel;
-            });
-
-            Object.keys(periods).sort().reverse().forEach(key => {
-                list.innerHTML += `<div class="settings-item" style="text-align:center; background:#222; margin-bottom:10px; border-radius:15px;" onclick="viewArchiveDetails('${key}', '${periods[key]}')">${periods[key]}</div>`;
-            });
-        }
-
-        function viewArchiveDetails(key, label) {
-            document.getElementById('archiveList').style.display = 'none';
-            const details = document.getElementById('archiveDetailsContainer');
-            details.style.display = 'block';
-            details.innerHTML = `<h3 style="color:var(--primary)">سجل ${label}</h3>`;
-            
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            Object.keys(logs).sort().reverse().forEach(date => {
-                const info = getPeriodInfo(new Date(date));
-                if (info.periodKey === key) {
-                    details.innerHTML += createLogItem(date, logs[date], false);
-                }
-            });
-            details.innerHTML += `<button class="view-btn" style="width:100%" onclick="renderArchiveList(); document.getElementById('archiveDetailsContainer').style.display='none'; document.getElementById('archiveList').style.display='block';">رجوع للقائمة</button>`;
-        }
-
-        // --- عرض السجل الحالي ---
-        function renderLog() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            const container = document.getElementById('logContainer');
-            container.innerHTML = "";
-            
-            const currentPeriod = getPeriodInfo(new Date()).periodKey;
-
-            Object.keys(logs).sort().reverse().forEach(date => {
-                if (getPeriodInfo(new Date(date)).periodKey === currentPeriod) {
-                    container.innerHTML += createLogItem(date, logs[date], true);
-                }
-            });
-        }
-
-        function createLogItem(date, s, editable) {
-            const d = new Date(date);
-            const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
-            let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s;
-            let ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
-            const fmt = (sec) => `${Math.floor(sec/3600)}س ${Math.floor((sec%3600)/60)}د`;
-
-            return `
-                <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
-                    <div class="log-header"><span>يوم ${dayName}</span><span>${date}</span></div>
-                    <div class="log-details">
-                        <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${fmt(basic)}</b></div>
-                        <div class="detail-box"><span class="detail-label">إضافي</span><b class="detail-val" style="color:var(--success)">${fmt(ot)}</b></div>
-                        <div class="detail-box"><span class="detail-label">إجمالي</span><b class="detail-val">${fmt(s)}</b></div>
-                    </div>
-                    ${editable ? `<span style="position:absolute;left:8px;bottom:5px;cursor:pointer;opacity:0.3" onclick="openEdit('${date}')">✏️</span>` : ''}
-                </div>`;
-        }
-
-        // --- الدوال المساعدة ---
-        function updateMonthlyTotal() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}"), total = 0;
-            const currentPeriod = getPeriodInfo(new Date()).periodKey;
-            for (let d in logs) { 
-                if (getPeriodInfo(new Date(d)).periodKey === currentPeriod) total += logs[d]; 
-            }
-            document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
         }
 
         function startUI() { 
@@ -244,7 +144,92 @@
             if (seconds > SHIFT_LIMIT) {
                 document.getElementById('otDisplay').innerText = formatTime(seconds - SHIFT_LIMIT);
                 document.getElementById('otDisplay').style.color = "var(--success)";
+            } else {
+                document.getElementById('otDisplay').innerText = "00:00:00";
+                document.getElementById('otDisplay').style.color = "#fff";
             }
+        }
+
+        function saveWorkSession(start, sec) {
+            const dStr = `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            logs[dStr] = (logs[dStr] || 0) + sec;
+            localStorage.setItem('workLogs', JSON.stringify(logs));
+        }
+
+        function renderLog() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            const container = document.getElementById('logContainer');
+            container.innerHTML = "";
+            const currentPeriod = getPeriodInfo(new Date()).periodKey;
+            Object.keys(logs).sort().reverse().forEach(date => {
+                if (getPeriodInfo(new Date(date)).periodKey === currentPeriod) {
+                    container.innerHTML += createLogItem(date, logs[date], true);
+                }
+            });
+        }
+
+        function createLogItem(date, s, editable) {
+            const d = new Date(date);
+            const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
+            let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s;
+            let ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
+            const fmt = (sec) => `${Math.floor(sec/3600)}س ${Math.floor((sec%3600)/60)}د`;
+            return `
+                <div class="log-item ${ot > 0 ? 'has-ot' : ''}">
+                    <div class="log-header"><span>يوم ${dayName}</span><span>${date}</span></div>
+                    <div class="log-details">
+                        <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${fmt(basic)}</b></div>
+                        <div class="detail-box"><span class="detail-label">إضافي</span><b class="detail-val" style="color:var(--success)">${fmt(ot)}</b></div>
+                        <div class="detail-box"><span class="detail-label">إجمالي</span><b class="detail-val">${fmt(s)}</b></div>
+                    </div>
+                    ${editable ? `<span style="position:absolute;left:8px;bottom:5px;cursor:pointer;opacity:0.3" onclick="openEdit('${date}')">✏️</span>` : ''}
+                </div>`;
+        }
+
+        function openArchiveScreen() {
+            closeModal('settingsModal');
+            document.getElementById('archiveScreen').style.display = 'flex';
+            renderArchiveList();
+        }
+
+        function closeArchiveScreen() {
+            document.getElementById('archiveScreen').style.display = 'none';
+        }
+
+        function renderArchiveList() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            const list = document.getElementById('archiveList');
+            list.innerHTML = "";
+            let periods = {};
+            Object.keys(logs).forEach(date => {
+                const info = getPeriodInfo(new Date(date));
+                if (!periods[info.periodKey]) periods[info.periodKey] = info.monthLabel;
+            });
+            Object.keys(periods).sort().reverse().forEach(key => {
+                list.innerHTML += `<div class="settings-item" style="text-align:center; background:#222; margin-bottom:10px; border-radius:15px;" onclick="viewArchiveDetails('${key}', '${periods[key]}')">${periods[key]}</div>`;
+            });
+        }
+
+        function viewArchiveDetails(key, label) {
+            document.getElementById('archiveList').style.display = 'none';
+            const details = document.getElementById('archiveDetailsContainer');
+            details.style.display = 'block';
+            details.innerHTML = `<h3 style="color:var(--primary)">سجل ${label}</h3>`;
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            Object.keys(logs).sort().reverse().forEach(date => {
+                if (getPeriodInfo(new Date(date)).periodKey === key) {
+                    details.innerHTML += createLogItem(date, logs[date], false);
+                }
+            });
+            details.innerHTML += `<button class="view-btn" style="width:100%" onclick="document.getElementById('archiveDetailsContainer').style.display='none'; document.getElementById('archiveList').style.display='block';">رجوع للقائمة</button>`;
+        }
+
+        function updateMonthlyTotal() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}"), total = 0;
+            const currentPeriod = getPeriodInfo(new Date()).periodKey;
+            for (let d in logs) { if (getPeriodInfo(new Date(d)).periodKey === currentPeriod) total += logs[d]; }
+            document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
         }
 
         function syncWithGoogleSheet(sec) {
@@ -267,7 +252,10 @@
         function checkMemory() {
             updateMonthlyTotal();
             const s = localStorage.getItem('workStartTime');
-            if (s) { seconds = Math.floor((new Date() - new Date(s)) / 1000); startUI(); }
+            if (s) { 
+                seconds = Math.floor((new Date() - new Date(s)) / 1000); 
+                startUI(); 
+            }
         }
 
         function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
@@ -292,7 +280,7 @@
             for(let d in logs) csv += `${d},${logs[d]},${(logs[d]/3600).toFixed(2)}\n`;
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'Work_History.csv'; a.click();
+            const a = document.createElement('a'); a.href = url; a.download = 'History.csv'; a.click();
         }
     </script>
 </body>
