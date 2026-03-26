@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work Tracker Pro v16</title>
+    <title>Work Tracker Pro v17</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,9 +21,9 @@
         #mainBtn { background: var(--success); }
         .stop { background: #ff4b2b !important; }
         .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; font-size: 0.85rem; margin-bottom: 10px; }
-        #logContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
-        #logContainer::-webkit-scrollbar { width: 4px; }
-        #logContainer::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        
+        /* تنسيق السجلات */
+        #logContainer, #archiveDetailsContainer { width: 100%; max-width: 350px; display: none; margin-top: 5px; overflow-y: auto; flex-grow: 1; padding-bottom: 20px; }
         .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; position: relative; }
         .has-ot { border-right: 4px solid var(--success); }
         .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.85rem; margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 5px; }
@@ -31,10 +31,14 @@
         .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; }
         .detail-label { color: #666; display: block; font-size: 0.6rem; }
         .detail-val { font-size: 0.7rem; font-weight: bold; }
+
+        /* الشاشات المنبثقة */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
+        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; max-height: 85vh; overflow-y: auto; }
+        .full-screen-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; }
+        
         .modal-content input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; box-sizing: border-box; }
-        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; }
+        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; text-align: right; }
     </style>
 </head>
 <body onload="checkMemory()">
@@ -44,61 +48,82 @@
     <div class="dashboard-card">
         <div class="stat-row"><span>ساعات اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
         <div class="stat-row"><span>الإضافي:</span><span id="otDisplay" class="stat-value">00:00:00</span></div>
-        <div class="stat-row"><span>إجمالي الشهر:</span><span id="monthlyDisplay" class="stat-value" style="color:var(--accent);">0س 0د</span></div>
+        <div class="stat-row"><span>إجمالي الشهر الحالي:</span><span id="monthlyDisplay" class="stat-value" style="color:var(--accent);">0س 0د</span></div>
     </div>
 
-    <button class="view-btn" onclick="toggleLog()">عرض سجل الشهر الحالي ⬇️</button>
+    <button class="view-btn" id="toggleLogBtn" onclick="toggleLog()">عرض سجل الشهر الحالي ⬇️</button>
     <div id="logContainer"></div>
 
     <div id="timer">00:00:00</div>
     <button id="mainBtn" class="btn" onclick="askPIN()">ابدأ العمل</button>
 
-    <div id="settingsModal" class="modal"><div class="modal-content"><h3>الإعدادات</h3>
-        <div class="settings-item" onclick="openArchive()" style="color:var(--primary)">الأرشيف العام (سجل الشهور) 📂</div>
+    <div id="settingsModal" class="modal"><div class="modal-content">
+        <h3>الإعدادات</h3>
+        <div class="settings-item" onclick="openArchiveScreen()" style="color:var(--primary)">الأرشيف العام (سجل الشهور) 📂</div>
         <div class="settings-item" onclick="changePIN()">تغيير الرمز (PIN)</div>
         <div class="settings-item" onclick="exportToSheet()" style="color:var(--success)">تنزيل السجل Excel 📥</div>
         <button class="view-btn" style="margin-top:20px" onclick="closeModal('settingsModal')">إغلاق</button>
     </div></div>
 
-    <div id="archiveModal" class="modal"><div class="modal-content" style="max-height: 80vh; overflow-y: auto;">
-        <h3>أرشيف الشهور</h3>
-        <div id="archiveList"></div>
-        <button class="view-btn" style="margin-top:20px" onclick="closeModal('archiveModal')">رجوع</button>
-    </div></div>
+    <div id="archiveScreen" class="full-screen-modal">
+        <h2 style="color:var(--accent)">الأرشيف العام</h2>
+        <div id="archiveList" style="width:100%; max-width:350px;"></div>
+        <div id="archiveDetailsContainer"></div>
+        <button class="btn" style="background:#444; margin-top:auto;" onclick="closeArchiveScreen()">إغلاق الأرشيف</button>
+    </div>
 
-    <div id="pinModal" class="modal"><div class="modal-content"><h3>أدخل الرمز</h3><input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)"><button class="view-btn" style="margin-top:10px" onclick="closeModal('pinModal')">إلغاء</button></div></div>
-    
-    <div id="editModal" class="modal"><div class="modal-content"><h3>تعديل يدوي</h3><p id="editDateLabel" style="color:var(--accent)"></p><input type="time" id="timeIn"><input type="time" id="timeOut"><button class="btn" style="width:100%; margin-top:10px; background:var(--primary)" onclick="confirmEdit()">حفظ التعديل</button><button class="view-btn" onclick="closeModal('editModal')">إلغاء</button></div></div>
+    <div id="pinModal" class="modal"><div class="modal-content"><h3>أدخل الرمز</h3><input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="checkPINAuto(this.value)"><button class="view-btn" onclick="closeModal('pinModal')">إلغاء</button></div></div>
+    <div id="editModal" class="modal"><div class="modal-content"><h3>تعديل يدوي</h3><p id="editDateLabel" style="color:var(--accent)"></p><input type="time" id="timeIn"><input type="time" id="timeOut"><button class="btn" style="width:100%; background:var(--primary)" onclick="confirmEdit()">حفظ</button><button class="view-btn" onclick="closeModal('editModal')">إلغاء</button></div></div>
 
     <script>
-        // --- الإعدادات الأساسية (غيرها مرة واحدة هنا) ---
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MiD6KRa_w35y9HINPkyeU-LONvCoxgFFqGeEbkRYsJuuMTOhg6SNYcLu6mCjO18P/exec"; 
-        const DEFAULT_PIN = "2589"; // باسوردك المفضل هنا
+        const DEFAULT_PIN = "2589"; 
         const SHIFT_LIMIT = 8 * 3600; 
 
         let seconds = 0, timerInterval = null, currentEditDate = '';
 
-        // 1. إدارة الرموز والمودالز
+        // --- دوال المودال ---
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function getPIN() { return localStorage.getItem('userPIN') || DEFAULT_PIN; }
-        
+
         function checkPINAuto(val) {
             if (val.length === 4) {
                 if (val === getPIN()) { closeModal('pinModal'); toggleTimer(); }
-                else { alert("الرمز خطأ!"); document.getElementById('pinInput').value=''; }
+                else { alert("خطأ!"); document.getElementById('pinInput').value=''; }
             }
         }
 
-        // 2. المحرك الرئيسي للوقت
+        // --- منطق الحسابات الذكي (26 لـ 25) ---
+        function getPeriodInfo(dateObj) {
+            const d = new Date(dateObj);
+            const day = d.getDate();
+            let month = d.getMonth();
+            let year = d.getFullYear();
+            
+            // لو اليوم 26 أو أكتر، يبقى إحنا في "دورة" الشهر اللي جاي
+            // مثال: 26 مارس -> يتبع دورة أبريل (اللي بتخلص 25 أبريل)
+            if (day >= 26) { month++; }
+            if (month > 11) { month = 0; year++; }
+            
+            const periodDate = new Date(year, month, 1);
+            const monthLabel = periodDate.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            const periodKey = `${year}-${month + 1}`;
+            return { monthLabel, periodKey };
+        }
+
+        // --- المحرك الرئيسي ---
         function toggleTimer() {
             if (!timerInterval) {
                 localStorage.setItem('workStartTime', new Date().toISOString());
                 startUI();
             } else {
                 const finalSec = seconds;
-                saveWorkSession();
+                const startTime = new Date(localStorage.getItem('workStartTime'));
+                
+                saveWorkSession(startTime, finalSec);
                 syncWithGoogleSheet(finalSec);
+                
                 clearInterval(timerInterval);
                 timerInterval = null;
                 localStorage.removeItem('workStartTime');
@@ -110,44 +135,74 @@
             }
         }
 
-        function startUI() { 
-            if(timerInterval) clearInterval(timerInterval); 
-            timerInterval = setInterval(() => {
-                seconds++;
-                updateDisplays();
-            }, 1000); 
-            updateButtonUI(true); 
+        function saveWorkSession(start, sec) {
+            const dStr = `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            logs[dStr] = (logs[dStr] || 0) + sec;
+            localStorage.setItem('workLogs', JSON.stringify(logs));
         }
 
-        function updateDisplays() {
-            const ts = formatTime(seconds);
-            document.getElementById('timer').innerText = ts;
-            document.getElementById('dailyDisplay').innerText = ts;
-            if (seconds > SHIFT_LIMIT) {
-                document.getElementById('otDisplay').innerText = formatTime(seconds - SHIFT_LIMIT);
-                document.getElementById('otDisplay').style.color = "var(--success)";
-            }
+        // --- الأرشيف العام (شاشة منفصلة) ---
+        function openArchiveScreen() {
+            closeModal('settingsModal');
+            document.getElementById('archiveScreen').style.display = 'flex';
+            renderArchiveList();
         }
 
-        // 3. السجل والأرشيف
+        function closeArchiveScreen() {
+            document.getElementById('archiveScreen').style.display = 'none';
+            document.getElementById('archiveDetailsContainer').style.display = 'none';
+            document.getElementById('archiveList').style.display = 'block';
+        }
+
+        function renderArchiveList() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            const list = document.getElementById('archiveList');
+            list.innerHTML = "";
+            
+            let periods = {};
+            Object.keys(logs).forEach(date => {
+                const info = getPeriodInfo(new Date(date));
+                if (!periods[info.periodKey]) periods[info.periodKey] = info.monthLabel;
+            });
+
+            Object.keys(periods).sort().reverse().forEach(key => {
+                list.innerHTML += `<div class="settings-item" style="text-align:center; background:#222; margin-bottom:10px; border-radius:15px;" onclick="viewArchiveDetails('${key}', '${periods[key]}')">${periods[key]}</div>`;
+            });
+        }
+
+        function viewArchiveDetails(key, label) {
+            document.getElementById('archiveList').style.display = 'none';
+            const details = document.getElementById('archiveDetailsContainer');
+            details.style.display = 'block';
+            details.innerHTML = `<h3 style="color:var(--primary)">سجل ${label}</h3>`;
+            
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            Object.keys(logs).sort().reverse().forEach(date => {
+                const info = getPeriodInfo(new Date(date));
+                if (info.periodKey === key) {
+                    details.innerHTML += createLogItem(date, logs[date], false);
+                }
+            });
+            details.innerHTML += `<button class="view-btn" style="width:100%" onclick="renderArchiveList(); document.getElementById('archiveDetailsContainer').style.display='none'; document.getElementById('archiveList').style.display='block';">رجوع للقائمة</button>`;
+        }
+
+        // --- عرض السجل الحالي ---
         function renderLog() {
             let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
             const container = document.getElementById('logContainer');
             container.innerHTML = "";
             
-            const now = new Date();
-            let sP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth(), 26) : new Date(now.getFullYear(), now.getMonth()-1, 26);
-            let eP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth()+1, 25) : new Date(now.getFullYear(), now.getMonth(), 25);
+            const currentPeriod = getPeriodInfo(new Date()).periodKey;
 
             Object.keys(logs).sort().reverse().forEach(date => {
-                let dDate = new Date(date);
-                if (dDate >= sP && dDate <= eP) {
-                    container.innerHTML += createLogItem(date, logs[date]);
+                if (getPeriodInfo(new Date(date)).periodKey === currentPeriod) {
+                    container.innerHTML += createLogItem(date, logs[date], true);
                 }
             });
         }
 
-        function createLogItem(date, s) {
+        function createLogItem(date, s, editable) {
             const d = new Date(date);
             const dayName = d.toLocaleDateString('ar-EG', { weekday: 'long' });
             let basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s;
@@ -162,56 +217,43 @@
                         <div class="detail-box"><span class="detail-label">إضافي</span><b class="detail-val" style="color:var(--success)">${fmt(ot)}</b></div>
                         <div class="detail-box"><span class="detail-label">إجمالي</span><b class="detail-val">${fmt(s)}</b></div>
                     </div>
-                    <span style="position:absolute;left:8px;bottom:5px;cursor:pointer;opacity:0.5" onclick="openEdit('${date}')">✏️</span>
+                    ${editable ? `<span style="position:absolute;left:8px;bottom:5px;cursor:pointer;opacity:0.3" onclick="openEdit('${date}')">✏️</span>` : ''}
                 </div>`;
         }
 
-        function openArchive() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            const list = document.getElementById('archiveList');
-            list.innerHTML = "";
-            closeModal('settingsModal');
-            openModal('archiveModal');
-
-            let months = {};
-            Object.keys(logs).forEach(date => {
-                let d = new Date(date);
-                let key = `${d.getFullYear()}-${d.getMonth() + 1}`;
-                if (!months[key]) months[key] = [];
-                months[key].push(date);
-            });
-
-            Object.keys(months).sort().reverse().forEach(key => {
-                let [y, m] = key.split('-');
-                let name = new Date(y, m-1).toLocaleDateString('ar-EG', {month:'long', year:'numeric'});
-                list.innerHTML += `<div class="settings-item" style="text-align:center; background:#222; margin-bottom:8px; border-radius:12px;" onclick="viewArchiveMonth('${key}')">${name}</div>`;
-            });
+        // --- الدوال المساعدة ---
+        function updateMonthlyTotal() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}"), total = 0;
+            const currentPeriod = getPeriodInfo(new Date()).periodKey;
+            for (let d in logs) { 
+                if (getPeriodInfo(new Date(d)).periodKey === currentPeriod) total += logs[d]; 
+            }
+            document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
         }
 
-        function viewArchiveMonth(monthKey) {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            closeModal('archiveModal');
-            const container = document.getElementById('logContainer');
-            container.style.display = 'block';
-            container.innerHTML = `<h4 style="color:var(--accent)">أرشيف شهر ${monthKey}</h4>`;
-            
-            Object.keys(logs).sort().reverse().forEach(date => {
-                let d = new Date(date);
-                if (`${d.getFullYear()}-${d.getMonth()+1}` === monthKey) {
-                    container.innerHTML += createLogItem(date, logs[date]);
-                }
-            });
-            container.innerHTML += `<button class="view-btn" style="width:100%" onclick="renderLog()">العودة للشهر الحالي</button>`;
+        function startUI() { 
+            if(timerInterval) clearInterval(timerInterval); 
+            timerInterval = setInterval(() => { seconds++; updateDisplays(); }, 1000); 
+            updateButtonUI(true); 
         }
 
-        // 4. الربط والتزامن
+        function updateDisplays() {
+            const ts = formatTime(seconds);
+            document.getElementById('timer').innerText = ts;
+            document.getElementById('dailyDisplay').innerText = ts;
+            if (seconds > SHIFT_LIMIT) {
+                document.getElementById('otDisplay').innerText = formatTime(seconds - SHIFT_LIMIT);
+                document.getElementById('otDisplay').style.color = "var(--success)";
+            }
+        }
+
         function syncWithGoogleSheet(sec) {
             if (!SCRIPT_URL || SCRIPT_URL.includes("رابط")) return;
             fetch(SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
                 body: JSON.stringify({ date: new Date().toLocaleDateString('ar-EG'), hours: (sec/3600).toFixed(2) })
-            }).then(() => showToast("تم الإرسال للجوجل شيت بنجاح ✅"));
+            }).then(() => showToast("تم الإرسال بنجاح ✅"));
         }
 
         function showToast(msg) {
@@ -222,24 +264,6 @@
             setTimeout(() => t.remove(), 3000);
         }
 
-        // 5. وظائف إضافية
-        function saveWorkSession() {
-            const start = new Date(localStorage.getItem('workStartTime'));
-            const dStr = `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            logs[dStr] = (logs[dStr] || 0) + seconds;
-            localStorage.setItem('workLogs', JSON.stringify(logs));
-        }
-
-        function updateMonthlyTotal() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}"), total = 0;
-            const now = new Date();
-            let sP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth(), 26) : new Date(now.getFullYear(), now.getMonth()-1, 26);
-            let eP = now.getDate() >= 26 ? new Date(now.getFullYear(), now.getMonth()+1, 25) : new Date(now.getFullYear(), now.getMonth(), 25);
-            for (let d in logs) { if (new Date(d) >= sP && new Date(d) <= eP) total += logs[d]; }
-            document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
-        }
-
         function checkMemory() {
             updateMonthlyTotal();
             const s = localStorage.getItem('workStartTime');
@@ -248,17 +272,9 @@
 
         function formatTime(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
         function updateButtonUI(run) { const b = document.getElementById('mainBtn'); b.innerText = run ? "إنهاء العمل" : "ابدأ العمل"; b.className = run ? "btn stop" : "btn"; }
-        function toggleLog() { const c = document.getElementById('logContainer'); c.style.display = c.style.display === 'none' ? 'block' : 'none'; if(c.style.display==='block') renderLog(); }
-        function changePIN() { let p = prompt("الرمز الجديد (4 أرقام):"); if(p && p.length===4) { localStorage.setItem('userPIN', p); alert("تم تغيير الرمز بنجاح!"); } }
-        function exportToSheet() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            let csv = "Date,Total Seconds,Hours\n";
-            for(let d in logs) csv += `${d},${logs[d]},${(logs[d]/3600).toFixed(2)}\n`;
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'Work_History.csv'; a.click();
-        }
-        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = "تعديل يوم: " + date; openModal('editModal'); }
+        function toggleLog() { const c = document.getElementById('logContainer'); const b = document.getElementById('toggleLogBtn'); if(c.style.display === 'none') { c.style.display = 'block'; b.innerText = 'إخفاء السجل ⬆️'; renderLog(); } else { c.style.display = 'none'; b.innerText = 'عرض سجل الشهر الحالي ⬇️'; } }
+        function changePIN() { let p = prompt("الرمز الجديد:"); if(p && p.length===4) { localStorage.setItem('userPIN', p); alert("تم التغيير!"); } }
+        function openEdit(date) { currentEditDate = date; document.getElementById('editDateLabel').innerText = "تعديل: " + date; openModal('editModal'); }
         function confirmEdit() {
             let tIn = document.getElementById('timeIn').value, tOut = document.getElementById('timeOut').value;
             if (tIn && tOut) {
@@ -269,6 +285,14 @@
                 localStorage.setItem('workLogs', JSON.stringify(logs));
                 closeModal('editModal'); renderLog(); updateMonthlyTotal();
             }
+        }
+        function exportToSheet() {
+            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
+            let csv = "Date,Total Seconds,Hours\n";
+            for(let d in logs) csv += `${d},${logs[d]},${(logs[d]/3600).toFixed(2)}\n`;
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'Work_History.csv'; a.click();
         }
     </script>
 </body>
