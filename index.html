@@ -290,4 +290,11 @@
             const newPass = prompt("أدخل كلمة السر الجديدة:");
             if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم التغيير!"); }
         }
-        function show
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.bottom = "30px";
+            setTimeout(() => t.style.bottom = "-60px", 3000);
+        }
+    </script>
+</body>
+</html>
