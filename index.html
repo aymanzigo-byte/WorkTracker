@@ -3,274 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Work Tracker Pro v20</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <title>نظام تسجيل الساعات الاحترافي</title>
     <style>
-        :root { --primary: #00d2ff; --success: #2ecc71; --bg: #000; --card: #151515; --accent: #ffd700; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: #fff; font-family: sans-serif; text-align: center; margin: 0; padding: 20px; height: 100vh; display: flex; flex-direction: column; align-items: center; overflow: hidden; }
-        
-        .header { width: 100%; max-width: 350px; display: flex; justify-content: flex-end; margin-bottom: 10px; }
-        .settings-icon { font-size: 24px; cursor: pointer; padding: 5px; }
-        
-        .dashboard-card { background: var(--card); border: 1px solid #333; border-radius: 20px; padding: 15px; width: 100%; max-width: 320px; margin-bottom: 15px; }
-        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #222; }
-        .stat-value { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
-        
-        #timer { font-size: 3.5rem; color: var(--primary); margin: 20px 0; font-weight: bold; }
-        
-        .btn { padding: 15px 30px; font-size: 1.2rem; border: none; border-radius: 50px; cursor: pointer; color: #fff; font-weight: bold; width: 80%; max-width: 250px; transition: 0.2s; }
-        #mainBtn { background: var(--success); }
-        .stop { background: #ff4b2b !important; }
-        
-        .view-btn { background: none; border: 1px solid #444; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; margin-top: 10px; }
-        
-        #logContainer { width: 100%; max-width: 350px; display: none; overflow-y: auto; flex-grow: 1; margin-top: 15px; padding-bottom: 20px; }
-        .log-item { background: #111; border: 1px solid #222; padding: 12px; border-radius: 15px; margin-bottom: 10px; text-align: right; }
-        .log-header { display: flex; justify-content: space-between; color: var(--accent); font-size: 0.8rem; border-bottom: 1px solid #222; padding-bottom: 5px; margin-bottom: 8px; }
-        .log-details { display: flex; justify-content: space-between; }
-        .detail-box { flex: 1; text-align: center; background: #1a1a1a; padding: 5px; border-radius: 8px; margin: 0 2px; }
-        .detail-label { color: #666; font-size: 0.6rem; display: block; }
-        .detail-val { font-size: 0.75rem; }
+        :root { --gold: #ffd700; --bg: #0a0a0a; --card: #161616; --text: #ffffff; --danger: #ff4b2b; --success: #28a745; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
 
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; }
-        .modal-content { background: #1a1a1a; padding: 25px; border-radius: 20px; width: 85%; max-width: 300px; border: 1px solid #333; }
-        .modal-content input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; text-align: center; font-size: 1.2rem; }
+        /* شاشة البداية */
+        #splashScreen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 99999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center;
+            transition: opacity 0.8s ease;
+        }
+        .splash-logo { color: var(--gold); font-size: 2.2rem; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px; }
+        .produced-by { color: #555; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
+        .dev-name { color: var(--text); font-size: 1.2rem; font-weight: 300; margin-top: 5px; }
+
+        /* الواجهة الرئيسية */
+        header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222; }
+        .settings-btn { background: none; border: none; color: var(--gold); font-size: 1.5rem; cursor: pointer; }
         
-        .settings-item { border-bottom: 1px solid #333; padding: 15px 0; cursor: pointer; color: #ccc; text-align: right; }
+        .main-card { background: var(--card); width: 90%; max-width: 380px; border-radius: 25px; padding: 30px; margin-top: 40px; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .timer-display { font-size: 3rem; color: var(--gold); font-family: monospace; margin: 20px 0; font-weight: bold; }
         
-        /* شاشة الأرشيف الكاملة */
-        #archiveScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; align-items: center; padding: 20px; }
+        .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn-in { background: var(--success); color: white; }
+        .btn-out { background: var(--danger); color: white; }
+        .btn-disabled { background: #333; color: #666; cursor: not-allowed; }
+
+        /* الأرشيف والمودال */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; padding: 20px; }
+        .modal-content { background: var(--card); border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; border: 1px solid #333; }
+        .history-item { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
+        .history-date { color: #888; font-size: 0.8rem; }
+        .history-hours { color: var(--gold); font-weight: bold; }
+
+        #toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: bold; transition: 0.5s; z-index: 10000; }
     </style>
 </head>
-<body onload="initApp()">
+<body>
 
-    <div class="header"><span class="settings-icon" onclick="openModal('settingsModal')">⚙️</span></div>
-
-    <div class="dashboard-card">
-        <div class="stat-row"><span>اليوم:</span><span id="dailyDisplay" class="stat-value">00:00:00</span></div>
-        <div class="stat-row"><span>الشهر الحالي:</span><span id="monthlyDisplay" class="stat-value" style="color:var(--accent);">0س 0د</span></div>
+    <div id="splashScreen">
+        <div class="splash-logo">نظام الحضور</div>
+        <div class="produced-by">Produced by</div>
+        <div class="dev-name">[Ayman]</div>
     </div>
 
-    <div id="timer">00:00:00</div>
-    <button id="mainBtn" class="btn" onclick="askPIN()">ابدأ العمل</button>
-    <button class="view-btn" id="toggleLogBtn" onclick="toggleLog()">عرض السجل ⬇️</button>
+    <div id="toast">تم الإرسال والحفظ ✅</div>
 
-    <div id="logContainer"></div>
+    <header>
+        <div style="width:30px"></div>
+        <h2 style="color:var(--gold)">تسجيل العمل</h2>
+        <button class="settings-btn" onclick="openArchive()">⚙️</button>
+    </header>
 
-    <div id="pinModal" class="modal">
+    <div class="main-card">
+        <div id="currentDate" style="color:#666; margin-bottom:10px"></div>
+        <div class="timer-display" id="timer">00:00</div>
+        <div id="statusText" style="margin-bottom:20px; color:#aaa">جاهز للبدء</div>
+        
+        <button id="btnIn" class="btn btn-in" onclick="startWork()">تسجيل حضور</button>
+        <button id="btnOut" class="btn btn-out" onclick="endWork()" style="display:none">انصراف وحفظ</button>
+    </div>
+
+    <div id="archiveModal" class="modal">
         <div class="modal-content">
-            <h3>أدخل الرمز</h3>
-            <input type="password" id="pinInput" placeholder="****" inputmode="numeric" oninput="handlePIN(this.value)">
-            <button class="view-btn" onclick="closeModal('pinModal')">إلغاء</button>
+            <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">الأرشيف العام (دورة 26-25)</h3>
+            <div id="historyList"></div>
+            <button class="btn" style="background:#444; color:#fff;" onclick="closeArchive()">إغلاق</button>
         </div>
-    </div>
-
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <h3 style="margin-top:0">الإعدادات</h3>
-            <div class="settings-item" onclick="openArchive()">الأرشيف العام 📂</div>
-            <div class="settings-item" onclick="changePIN()">تغيير الرمز</div>
-            <div class="settings-item" onclick="exportData()" style="color:var(--success)">تصدير Excel</div>
-            <button class="btn" style="width:100%; margin-top:20px; font-size:1rem; padding:10px;" onclick="closeModal('settingsModal')">إغلاق</button>
-        </div>
-    </div>
-
-    <div id="archiveScreen">
-        <h2 style="color:var(--accent)">الأرشيف العام</h2>
-        <div id="archiveList" style="width:100%; max-width:350px;"></div>
-        <div id="archiveDetails" style="display:none; width:100%; max-width:350px; overflow-y:auto; flex-grow:1;"></div>
-        <button class="btn" style="background:#333; margin-top:auto;" onclick="closeArchive()">رجوع</button>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2MiD6KRa_w35y9HINPkyeU-LONvCoxgFFqGeEbkRYsJuuMTOhg6SNYcLu6mCjO18P/exec";
-        const SHIFT_LIMIT = 8 * 3600;
-        let seconds = 0, timerInterval = null;
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8Bayque38t00AZ7dyuPOt_MTgY6LgpMNEgQUwB2YJa71YnpiNwC0lg3Uaom7_0pDk/exec";
 
-        // --- وظائف المودال الأساسية ---
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function getSavedPIN() { return localStorage.getItem('userPIN') || "0000"; }
+        // شاشة البداية
+        window.addEventListener('load', () => {
+            document.getElementById('currentDate').innerText = new Date().toLocaleDateString('ar-EG', {weekday:'long', day:'numeric', month:'long'});
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 800);
+            }, 2000);
+            checkSession();
+        });
 
-        // --- التعامل مع الزرار الرئيسي ---
-        function askPIN() {
-            document.getElementById('pinInput').value = "";
-            openModal('pinModal');
-            setTimeout(() => document.getElementById('pinInput').focus(), 150);
-        }
-
-        function handlePIN(val) {
-            if (val.length === 4) {
-                if (val === getSavedPIN()) {
-                    closeModal('pinModal');
-                    processAction();
-                } else {
-                    alert("خطأ!");
-                    document.getElementById('pinInput').value = "";
-                }
+        function checkSession() {
+            const startTime = localStorage.getItem('work_start');
+            if(startTime) {
+                document.getElementById('btnIn').style.display = 'none';
+                document.getElementById('btnOut').style.display = 'block';
+                document.getElementById('statusText').innerText = "قيد العمل حالياً...";
+                startTimerUpdate(new Date(startTime));
             }
         }
 
-        function processAction() {
-            if (!timerInterval) {
-                // حضور
-                localStorage.setItem('workStartTime', new Date().toISOString());
-                runTimer();
-            } else {
-                // انصراف
-                const finalSec = seconds;
-                const start = new Date(localStorage.getItem('workStartTime'));
-                saveSession(start, finalSec);
-                syncSheet(finalSec);
-                
-                clearInterval(timerInterval);
-                timerInterval = null;
-                localStorage.removeItem('workStartTime');
-                seconds = 0;
-                document.getElementById('timer').innerText = "00:00:00";
-                updateUI(false);
-                updateTotals();
-                if(document.getElementById('logContainer').style.display === 'block') renderLog();
-            }
+        function startWork() {
+            const now = new Date();
+            localStorage.setItem('work_start', now.toISOString());
+            location.reload();
         }
 
-        // --- العداد ---
-        function runTimer() {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                seconds++;
-                const ts = fmt(seconds);
-                document.getElementById('timer').innerText = ts;
-                document.getElementById('dailyDisplay').innerText = ts;
-            }, 1000);
-            updateUI(true);
-        }
-
-        // --- إدارة البيانات (26 لـ 25) ---
-        function getPeriod(dateObj) {
-            const d = new Date(dateObj);
-            let m = d.getMonth(), y = d.getFullYear();
-            if (d.getDate() >= 26) m++;
-            if (m > 11) { m = 0; y++; }
-            const pDate = new Date(y, m, 1);
-            return {
-                key: `${y}-${m+1}`,
-                label: pDate.toLocaleDateString('ar-EG', {month:'long', year:'numeric'})
-            };
-        }
-
-        function saveSession(start, sec) {
-            const dStr = `${start.getFullYear()}-${start.getMonth()+1}-${start.getDate()}`;
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            logs[dStr] = (logs[dStr] || 0) + sec;
-            localStorage.setItem('workLogs', JSON.stringify(logs));
-        }
-
-        function updateTotals() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}"), total = 0;
-            const currentP = getPeriod(new Date()).key;
-            for (let d in logs) {
-                if (getPeriod(new Date(d)).key === currentP) total += logs[d];
-            }
-            document.getElementById('monthlyDisplay').innerText = `${Math.floor(total/3600)}س ${Math.floor((total%3600)/60)}د`;
-        }
-
-        // --- عرض السجل والأرشيف ---
-        function renderLog() {
-            const container = document.getElementById('logContainer');
-            container.innerHTML = "";
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            const currentP = getPeriod(new Date()).key;
+        async function endWork() {
+            const startTime = new Date(localStorage.getItem('work_start'));
+            const endTime = new Date();
             
-            Object.keys(logs).sort().reverse().forEach(d => {
-                if (getPeriod(new Date(d)).key === currentP) {
-                    container.innerHTML += createItem(d, logs[d]);
-                }
-            });
+            const diffMs = endTime - startTime;
+            const diffHrs = Math.floor(diffMs / 3600000);
+            const diffMins = Math.round(((diffMs % 3600000) / 60000));
+            const totalStr = `${diffHrs} س و ${diffMins} د`;
+
+            // إرسال لجوجل شيت (عمودين فقط كما طلبت)
+            const dateStr = endTime.toLocaleDateString('en-GB'); 
+            const params = new URLSearchParams({ date: dateStr, totalHours: totalStr });
+
+            try {
+                showToast("جاري الحفظ...");
+                await fetch(SCRIPT_URL + "?" + params.toString(), { method: 'POST' });
+                
+                // حفظ في الأرشيف المحلي
+                saveToLocalArchive(dateStr, totalStr);
+                
+                localStorage.removeItem('work_start');
+                showToast("تم الحفظ بنجاح ✅");
+                setTimeout(() => location.reload(), 2000);
+            } catch (e) {
+                alert("مشكلة في الإرسال.. تأكد من الإنترنت");
+            }
         }
 
-        function createItem(date, s) {
-            const d = new Date(date);
-            const dayName = d.toLocaleDateString('ar-EG', {weekday:'long'});
-            const basic = s > SHIFT_LIMIT ? SHIFT_LIMIT : s;
-            const ot = s > SHIFT_LIMIT ? s - SHIFT_LIMIT : 0;
-            const h = (sec) => `${Math.floor(sec/3600)}س ${Math.floor((sec%3600)/60)}د`;
-            return `<div class="log-item" style="border-right: 4px solid ${ot>0?'#2ecc71':'#333'}">
-                <div class="log-header"><span>${dayName}</span><span>${date}</span></div>
-                <div class="log-details">
-                    <div class="detail-box"><span class="detail-label">أساسي</span><b class="detail-val">${h(basic)}</b></div>
-                    <div class="detail-box"><span class="detail-label" style="color:#2ecc71">إضافي</span><b class="detail-val">${h(ot)}</b></div>
-                    <div class="detail-box"><span class="detail-label">إجمالي</span><b class="detail-val">${h(s)}</b></div>
-                </div>
-            </div>`;
+        function saveToLocalArchive(date, hours) {
+            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            archive.unshift({ date, hours, timestamp: new Date().toISOString() });
+            localStorage.setItem('user_archive', JSON.stringify(archive));
         }
 
         function openArchive() {
-            closeModal('settingsModal');
-            const scr = document.getElementById('archiveScreen');
-            scr.style.display = 'flex';
-            const list = document.getElementById('archiveList');
+            const list = document.getElementById('historyList');
+            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
             list.innerHTML = "";
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            let periods = {};
-            Object.keys(logs).forEach(d => {
-                const p = getPeriod(new Date(d));
-                periods[p.key] = p.label;
-            });
-            Object.keys(periods).sort().reverse().forEach(k => {
-                list.innerHTML += `<div class="settings-item" style="text-align:center; background:#111; border-radius:15px; margin-bottom:10px" onclick="showArchiveDetail('${k}', '${periods[k]}')">${periods[k]}</div>`;
-            });
-        }
 
-        function showArchiveDetail(key, label) {
-            document.getElementById('archiveList').style.display = 'none';
-            const det = document.getElementById('archiveDetails');
-            det.style.display = 'block';
-            det.innerHTML = `<h3 style="color:var(--primary)">${label}</h3>`;
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            Object.keys(logs).sort().reverse().forEach(d => {
-                if (getPeriod(new Date(d)).key === key) det.innerHTML += createItem(d, logs[d]);
-            });
-            det.innerHTML += `<button class="view-btn" style="width:100%" onclick="document.getElementById('archiveDetails').style.display='none'; document.getElementById('archiveList').style.display='block';">رجوع</button>`;
-        }
-
-        function closeArchive() { document.getElementById('archiveScreen').style.display = 'none'; }
-
-        // --- المساعدات ---
-        function initApp() {
-            updateTotals();
-            const s = localStorage.getItem('workStartTime');
-            if (s) {
-                seconds = Math.floor((new Date() - new Date(s)) / 1000);
-                runTimer();
+            if(archive.length === 0) {
+                list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>السجل فارغ</p>";
+            } else {
+                // منطق دورة الشهر (من 26 لـ 25)
+                archive.forEach(item => {
+                    list.innerHTML += `
+                        <div class="history-item">
+                            <div class="history-date">${item.date}</div>
+                            <div class="history-hours">${item.hours}</div>
+                        </div>
+                    `;
+                });
             }
+            document.getElementById('archiveModal').style.display = 'flex';
         }
-        function fmt(s) { return `${Math.floor(s/3600).toString().padStart(2,'0')}:${Math.floor((s%3600)/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`; }
-        function updateUI(run) {
-            const b = document.getElementById('mainBtn');
-            b.innerText = run ? "إنهاء العمل" : "ابدأ العمل";
-            b.className = run ? "btn stop" : "btn";
+
+        function closeArchive() { document.getElementById('archiveModal').style.display = 'none'; }
+
+        function startTimerUpdate(start) {
+            setInterval(() => {
+                const diff = new Date() - start;
+                const h = Math.floor(diff / 3600000).toString().padStart(2,'0');
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
+                document.getElementById('timer').innerText = `${h}:${m}`;
+            }, 1000);
         }
-        function toggleLog() {
-            const c = document.getElementById('logContainer');
-            const b = document.getElementById('toggleLogBtn');
-            const isOff = c.style.display === 'none' || c.style.display === '';
-            c.style.display = isOff ? 'block' : 'none';
-            b.innerText = isOff ? 'إخفاء السجل ⬆️' : 'عرض السجل ⬇️';
-            if(isOff) renderLog();
-        }
-        function syncSheet(sec) {
-            if (!SCRIPT_URL || SCRIPT_URL.includes("رابط")) return;
-            fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body: JSON.stringify({date: new Date().toLocaleDateString('ar-EG'), hours: (sec/3600).toFixed(2)}) });
-        }
-        function changePIN() { let p = prompt("الرمز الجديد:"); if(p && p.length===4) localStorage.setItem('userPIN', p); }
-        function exportData() {
-            let logs = JSON.parse(localStorage.getItem('workLogs') || "{}");
-            let csv = "Date,Hours\n";
-            for(let d in logs) csv += `${d},${(logs[d]/3600).toFixed(2)}\n`;
-            const blob = new Blob([csv], {type:'text/csv'});
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href=url; a.download='WorkLog.csv'; a.click();
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.style.bottom = "30px";
+            setTimeout(() => t.style.bottom = "-60px", 3000);
         }
     </script>
 </body>
