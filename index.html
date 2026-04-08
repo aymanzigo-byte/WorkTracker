@@ -43,6 +43,23 @@
 }
 .context-menu-item:last-child { border-bottom: none; color: var(--danger); }
 .context-menu-item:hover { background: #333; }
+        /* تصميم مودال التعديل الاحترافي */
+.edit-modal-content {
+    background: var(--card); border-radius: 20px; padding: 25px; 
+    width: 90%; max-width: 350px; border: 1px solid #333; text-align: center;
+}
+.edit-grid {
+    display: flex; gap: 10px; margin: 20px 0;
+}
+.edit-field {
+    flex: 1; background: #000; border: 1px solid #444; border-radius: 10px;
+    padding: 10px; color: #fff; text-align: center;
+}
+.edit-field label { display: block; font-size: 0.7rem; color: var(--gold); margin-bottom: 5px; }
+.edit-field input { 
+    width: 100%; background: transparent; border: none; color: #fff; 
+    text-align: center; font-size: 1.5rem; outline: none; font-family: monospace;
+}
     </style>
 </head>
 <body>
@@ -77,6 +94,33 @@
             <input type="password" id="passInput" placeholder="****" inputmode="numeric">
             <button class="btn btn-in" onclick="verifyPassword()">تأكيد</button>
             <button class="btn" style="background:#333; color:#fff" onclick="closeModal('passModal')">إلغاء</button>
+            <div id="editEntryModal" class="modal">
+    <div class="edit-modal-content">
+        <h3 style="color:var(--gold)">تعديل السجل</h3>
+        <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px"></p>
+        <div class="edit-grid">
+            <div class="edit-field">
+                <label>الساعات</label>
+                <input type="number" id="editHrs" placeholder="0" inputmode="numeric">
+            </div>
+            <div class="edit-field">
+                <label>الدقائق</label>
+                <input type="number" id="editMins" placeholder="0" inputmode="numeric">
+            </div>
+        </div>
+        <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
+        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
+    </div>
+</div>
+
+<div id="deleteConfirmModal" class="modal">
+    <div class="edit-modal-content" style="border-color: var(--danger)">
+        <h3 style="color:var(--danger)">تأكيد الحذف</h3>
+        <p style="margin: 15px 0; color: #bbb;">هل أنت متأكد من حذف هذا السجل نهائياً؟</p>
+        <button class="btn btn-out" onclick="confirmDeleteEntry()">نعم، احذف</button>
+        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('deleteConfirmModal')">تراجع</button>
+    </div>
+</div>
         </div>
     </div>
 
@@ -223,33 +267,53 @@
             setTimeout(() => t.style.bottom = "-60px", 3000);
         }
         // إنشاء عنصر القائمة في الصفحة
-const menu = document.createElement('div');
-menu.className = 'context-menu';
-menu.innerHTML = `
-    <div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div>
-    <div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>
-`;
-document.body.appendChild(menu);
+let selectedLogIndex = null;
 
-let selectedIndex = null;
-
-function showContextMenu(x, y, index) {
-    selectedIndex = index;
-    menu.style.display = 'block';
-    menu.style.display = 'block';
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
+// دالة تفتح مودال التعديل وتملأ البيانات القديمة
+function editEntry() {
+    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+    let item = archive[selectedIndex];
+    selectedLogIndex = selectedIndex;
+    
+    // استخراج الأرقام من النص (مثال: "8 س و 30 د")
+    const hrsMatch = item.hours.match(/(\d+)\s*س/);
+    const minsMatch = item.hours.match(/(\d+)\s*د/);
+    
+    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
+    document.getElementById('editHrs').value = hrsMatch ? hrsMatch[1] : 0;
+    document.getElementById('editMins').value = minsMatch ? minsMatch[1] : 0;
+    
+    closeModal('menuModal'); // لو القائمة مفتوحة اقفلها
+    document.getElementById('editEntryModal').style.display = 'flex';
 }
 
-// إخفاء القائمة عند الضغط في أي مكان
-document.addEventListener('click', () => menu.style.display = 'none');
+function saveEditedEntry() {
+    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+    const hrs = document.getElementById('editHrs').value || 0;
+    const mins = document.getElementById('editMins').value || 0;
+    
+    archive[selectedLogIndex].hours = `${hrs} س و ${mins} د`;
+    localStorage.setItem('user_archive', JSON.stringify(archive));
+    
+    closeModal('editEntryModal');
+    renderQuickLog();
+    showToast("تم تحديث السجل بنجاح");
+}
 
 function deleteEntry() {
-    if(confirm("هل أنت متأكد من حذف هذا السجل؟")) {
-        let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-        archive.splice(selectedIndex, 1);
-        localStorage.setItem('user_archive', JSON.stringify(archive));
-        renderQuickLog();
+    selectedLogIndex = selectedIndex;
+    document.getElementById('deleteConfirmModal').style.display = 'flex';
+}
+
+function confirmDeleteEntry() {
+    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+    archive.splice(selectedLogIndex, 1);
+    localStorage.setItem('user_archive', JSON.stringify(archive));
+    
+    closeModal('deleteConfirmModal');
+    renderQuickLog();
+    showToast("تم الحذف");
+}
     }
 }
 
