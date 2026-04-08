@@ -17,7 +17,7 @@
         /* الواجهة */
         header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222; }
         .main-card { background: var(--card); width: 92%; max-width: 380px; border-radius: 25px; padding: 25px; margin-top: 20px; border: 1px solid #222; text-align: center; }
-        .timer-display { font-size: 3.5rem; color: var(--gold); font-family: monospace; margin: 15px 0; font-weight: bold; }
+        .timer-display { font-size: 3rem; color: var(--gold); font-family: monospace; margin: 15px 0; font-weight: bold; letter-spacing: 2px; }
         
         .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-in { background: var(--success); color: white; }
@@ -63,7 +63,7 @@
     </header>
 
     <div class="main-card">
-        <div id="timer" class="timer-display">00:00</div>
+        <div id="timer" class="timer-display">00:00:00</div>
         <button id="btnIn" class="btn btn-in" onclick="askPassword('in')">تسجيل حضور</button>
         <button id="btnOut" class="btn btn-out" onclick="askPassword('out')" style="display:none">انصراف وحفظ</button>
     </div>
@@ -128,7 +128,6 @@
         const menu = document.createElement('div');
 
         window.onload = () => {
-            // إخفاء الشاشة
             setTimeout(() => {
                 const splash = document.getElementById('splashScreen');
                 if (splash) {
@@ -137,7 +136,6 @@
                 }
             }, 2000);
 
-            // تجهيز المنيو
             menu.className = 'context-menu';
             menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
             document.body.appendChild(menu);
@@ -261,28 +259,21 @@
         function updateUI(working) {
             document.getElementById('btnIn').style.display = working ? 'none' : 'block';
             document.getElementById('btnOut').style.display = working ? 'block' : 'none';
-            if(!working) document.getElementById('timer').innerText = "00:00";
+            if(!working) document.getElementById('timer').innerText = "00:00:00";
         }
 
         function startTimer(start) {
-    if(timerInterval) clearInterval(timerInterval);
-
-    timerInterval = setInterval(() => {
-        const now = new Date();
-        const diff = now - start;
-
-        // حساب الساعات والدقائق والثواني
-        const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-        const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-        const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0'); // الثواني
-        
-        const timerElement = document.getElementById('timer');
-        if(timerElement) {
-            // عرض العداد الثلاثي
-            timerElement.innerText = `${h}:${m}:${s}`;
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = now - start;
+                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                const timerElement = document.getElementById('timer');
+                if(timerElement) { timerElement.innerText = `${h}:${m}:${s}`; }
+            }, 1000);
         }
-    }, 1000);
-}
 
         async function syncToGoogle() {
             const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
