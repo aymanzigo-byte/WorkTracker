@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>نظام الحضور المحمي</title>
+    <title>نظام الحضور المحمي - أيمن</title>
     <style>
         :root { --gold: #ffd700; --bg: #0a0a0a; --card: #161616; --text: #ffffff; --danger: #ff4b2b; --success: #28a745; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -24,8 +24,8 @@
         .btn-out { background: var(--danger); color: white; }
 
         /* السجل الخارجي */
-        .quick-log { width: 92%; max-width: 380px; margin-top: 20px; flex: 1; overflow-y: auto; }
-        .log-item { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-right: 4px solid var(--gold); font-size: 0.9rem; }
+        .quick-log { width: 92%; max-width: 380px; margin-top: 20px; flex: 1; overflow-y: auto; padding-bottom: 20px; }
+        .log-item { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-right: 4px solid var(--gold); font-size: 0.9rem; user-select: none; }
 
         /* المودالات */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
@@ -33,33 +33,17 @@
         .modal input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; background: #000; color: #fff; border: 1px solid #444; text-align: center; font-size: 1.2rem; }
         
         #toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: bold; transition: 0.5s; z-index: 10000; }
-        /* تنسيق قائمة الخيارات عند الدوسة التقيلة */
-.context-menu {
-    display: none; position: fixed; background: #222; border: 1px solid var(--gold);
-    border-radius: 10px; z-index: 10000; width: 150px; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-}
-.context-menu-item {
-    padding: 12px; cursor: pointer; border-bottom: 1px solid #333; text-align: center; font-size: 0.9rem;
-}
-.context-menu-item:last-child { border-bottom: none; color: var(--danger); }
-.context-menu-item:hover { background: #333; }
-        /* تصميم مودال التعديل الاحترافي */
-.edit-modal-content {
-    background: var(--card); border-radius: 20px; padding: 25px; 
-    width: 90%; max-width: 350px; border: 1px solid #333; text-align: center;
-}
-.edit-grid {
-    display: flex; gap: 10px; margin: 20px 0;
-}
-.edit-field {
-    flex: 1; background: #000; border: 1px solid #444; border-radius: 10px;
-    padding: 10px; color: #fff; text-align: center;
-}
-.edit-field label { display: block; font-size: 0.7rem; color: var(--gold); margin-bottom: 5px; }
-.edit-field input { 
-    width: 100%; background: transparent; border: none; color: #fff; 
-    text-align: center; font-size: 1.5rem; outline: none; font-family: monospace;
-}
+
+        /* القائمة التقيلة */
+        .context-menu { display: none; position: fixed; background: #222; border: 1px solid var(--gold); border-radius: 10px; z-index: 10000; width: 150px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        .context-menu-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; text-align: center; font-size: 0.9rem; }
+        .context-menu-item:last-child { border-bottom: none; color: var(--danger); }
+
+        /* التعديل الاحترافي */
+        .edit-grid { display: flex; gap: 10px; margin: 20px 0; }
+        .edit-field { flex: 1; background: #000; border: 1px solid #444; border-radius: 10px; padding: 10px; color: #fff; text-align: center; }
+        .edit-field label { display: block; font-size: 0.7rem; color: var(--gold); margin-bottom: 5px; }
+        .edit-field input { width: 100%; background: transparent; border: none; color: #fff; text-align: center; font-size: 1.5rem; outline: none; }
     </style>
 </head>
 <body>
@@ -67,7 +51,7 @@
     <div id="splashScreen">
         <div class="splash-logo">نظام الحضور الذكي</div>
         <div style="color:#555; letter-spacing:2px">PRODUCED BY</div>
-        <div id="Ayman" style="color:#fff; margin-top:5px">اسم المطور</div>
+        <div style="color:#fff; margin-top:5px">أيمن - Ayman</div>
     </div>
 
     <div id="toast">تمت العملية بنجاح ✅</div>
@@ -90,37 +74,38 @@
 
     <div id="passModal" class="modal">
         <div class="modal-content">
-            <h3 id="passTitle" style="color:var(--gold); text-align:center">أدخل كلمة السر</h3>
+            <h3 style="color:var(--gold); text-align:center">أدخل كلمة السر</h3>
             <input type="password" id="passInput" placeholder="****" inputmode="numeric">
             <button class="btn btn-in" onclick="verifyPassword()">تأكيد</button>
             <button class="btn" style="background:#333; color:#fff" onclick="closeModal('passModal')">إلغاء</button>
-            <div id="editEntryModal" class="modal">
-    <div class="edit-modal-content">
-        <h3 style="color:var(--gold)">تعديل السجل</h3>
-        <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px"></p>
-        <div class="edit-grid">
-            <div class="edit-field">
-                <label>الساعات</label>
-                <input type="number" id="editHrs" placeholder="0" inputmode="numeric">
-            </div>
-            <div class="edit-field">
-                <label>الدقائق</label>
-                <input type="number" id="editMins" placeholder="0" inputmode="numeric">
-            </div>
         </div>
-        <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
     </div>
-</div>
 
-<div id="deleteConfirmModal" class="modal">
-    <div class="edit-modal-content" style="border-color: var(--danger)">
-        <h3 style="color:var(--danger)">تأكيد الحذف</h3>
-        <p style="margin: 15px 0; color: #bbb;">هل أنت متأكد من حذف هذا السجل نهائياً؟</p>
-        <button class="btn btn-out" onclick="confirmDeleteEntry()">نعم، احذف</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('deleteConfirmModal')">تراجع</button>
+    <div id="editEntryModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--gold); text-align:center">تعديل السجل</h3>
+            <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px; text-align:center"></p>
+            <div class="edit-grid">
+                <div class="edit-field">
+                    <label>الساعات</label>
+                    <input type="number" id="editHrs" placeholder="0">
+                </div>
+                <div class="edit-field">
+                    <label>الدقائق</label>
+                    <input type="number" id="editMins" placeholder="0">
+                </div>
+            </div>
+            <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
+            <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
+        </div>
     </div>
-</div>
+
+    <div id="deleteConfirmModal" class="modal">
+        <div class="modal-content" style="border-color: var(--danger)">
+            <h3 style="color:var(--danger); text-align:center">تأكيد الحذف</h3>
+            <p style="margin: 15px 0; color: #bbb; text-align:center">هل أنت متأكد من حذف هذا السجل نهائياً؟</p>
+            <button class="btn btn-out" onclick="confirmDeleteEntry()">نعم، احذف</button>
+            <button class="btn" style="background:#333; color:#fff" onclick="closeModal('deleteConfirmModal')">تراجع</button>
         </div>
     </div>
 
@@ -136,44 +121,44 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8Bayque38t00AZ7dyuPOt_MTgY6LgpMNEgQUwB2YJa71YnpiNwC0lg3Uaom7_0pDk/exec";
-let pendingAction = null;
-let timerInterval;
-let selectedIndex = null;      // تأكد من وجود السطر ده
-let selectedLogIndex = null;   // تأكد من وجود السطر ده
+        let pendingAction = null;
+        let timerInterval;
+        let selectedIndex = null;
+        let selectedLogIndex = null;
+        const menu = document.createElement('div');
 
-window.onload = () => {
-    setTimeout(() => {
-        const splash = document.getElementById('splashScreen');
-        if (splash) {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.style.display = 'none', 800);
+        window.onload = () => {
+            // إخفاء الشاشة
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 800);
+                }
+            }, 2000);
+
+            // تجهيز المنيو
+            menu.className = 'context-menu';
+            menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
+            document.body.appendChild(menu);
+
+            renderQuickLog();
+            checkActiveSession();
+        };
+
+        function showContextMenu(x, y, index) {
+            selectedIndex = index;
+            menu.style.display = 'block';
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
         }
-    }, 2000);
-    renderQuickLog();
-    checkActiveSession();
-    const menu = document.createElement('div');
-menu.className = 'context-menu';
-menu.innerHTML = `
-    <div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div>
-    <div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>
-`;
-document.body.appendChild(menu);
 
-function showContextMenu(x, y, index) {
-    selectedIndex = index;
-    menu.style.display = 'block';
-    menu.style.left = x + 'px';
-    menu.style.top = y + 'px';
-}
-
-document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
-};
+        document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
 
         function askPassword(action) {
             pendingAction = action;
             document.getElementById('passInput').value = "";
             document.getElementById('passModal').style.display = 'flex';
-            document.getElementById('passInput').focus();
         }
 
         function verifyPassword() {
@@ -182,9 +167,7 @@ document.addEventListener('click', () => { if(menu) menu.style.display = 'none';
             if(input === savedPass) {
                 closeModal('passModal');
                 pendingAction === 'in' ? startWork() : endWork();
-            } else {
-                alert("كلمة سر خاطئة!");
-            }
+            } else { alert("كلمة سر خاطئة!"); }
         }
 
         function startWork() {
@@ -204,18 +187,14 @@ document.addEventListener('click', () => { if(menu) menu.style.display = 'none';
             const totalStr = `${diffHrs} س و ${diffMins} د`;
             const dateStr = endTime.toLocaleDateString('en-GB');
 
-            // حفظ محلي فوراً
             let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
             archive.unshift({ date: dateStr, hours: totalStr });
             localStorage.setItem('user_archive', JSON.stringify(archive));
             
-            // محاولة إرسال
             try {
                 await fetch(SCRIPT_URL + "?" + new URLSearchParams({date: dateStr, totalHours: totalStr}), {method:'POST'});
                 showToast("تم الحفظ والمزامنة ✅");
-            } catch(e) {
-                showToast("حفظ محلي (لا يوجد نت)");
-            }
+            } catch(e) { showToast("حفظ محلي (لا يوجد نت)"); }
 
             localStorage.removeItem('work_start');
             clearInterval(timerInterval);
@@ -223,22 +202,60 @@ document.addEventListener('click', () => { if(menu) menu.style.display = 'none';
             renderQuickLog();
         }
 
-        async function syncToGoogle() {
+        function renderQuickLog() {
+            const container = document.getElementById('quickLog');
             const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            if(archive.length === 0) return alert("لا يوجد بيانات للمزامنة");
-            showToast("جاري المزامنة الشاملة...");
-            for(let item of archive) {
-                await fetch(SCRIPT_URL + "?" + new URLSearchParams({date: item.date, totalHours: item.hours}), {method:'POST'});
-            }
-            alert("تم إرسال كافة السجلات بنجاح!");
+            container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">اضغط مطولاً للتعديل أو الحذف</p>';
+            archive.slice(0, 10).forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.hours}</span>`;
+                div.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e.pageX, e.pageY, index); };
+                container.appendChild(div);
+            });
+        }
+
+        function editEntry() {
+            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            selectedLogIndex = selectedIndex;
+            let item = archive[selectedIndex];
+            const hrsMatch = item.hours.match(/(\d+)\s*س/);
+            const minsMatch = item.hours.match(/(\d+)\s*د/);
+            document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
+            document.getElementById('editHrs').value = hrsMatch ? hrsMatch[1] : 0;
+            document.getElementById('editMins').value = minsMatch ? minsMatch[1] : 0;
+            closeModal('menuModal');
+            document.getElementById('editEntryModal').style.display = 'flex';
+        }
+
+        function saveEditedEntry() {
+            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            const hrs = document.getElementById('editHrs').value || 0;
+            const mins = document.getElementById('editMins').value || 0;
+            archive[selectedLogIndex].hours = `${hrs} س و ${mins} د`;
+            localStorage.setItem('user_archive', JSON.stringify(archive));
+            closeModal('editEntryModal');
+            renderQuickLog();
+            showToast("تم تحديث السجل بنجاح");
+        }
+
+        function deleteEntry() {
+            selectedLogIndex = selectedIndex;
+            document.getElementById('deleteConfirmModal').style.display = 'flex';
+        }
+
+        function confirmDeleteEntry() {
+            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            archive.splice(selectedLogIndex, 1);
+            localStorage.setItem('user_archive', JSON.stringify(archive));
+            closeModal('deleteConfirmModal');
+            renderQuickLog();
+            showToast("تم الحذف");
         }
 
         function checkActiveSession() {
             const start = localStorage.getItem('work_start');
-            if(start) {
-                updateUI(true);
-                startTimer(new Date(start));
-            }
+            if(start) { updateUI(true); startTimer(new Date(start)); }
         }
 
         function updateUI(working) {
@@ -256,100 +273,21 @@ document.addEventListener('click', () => { if(menu) menu.style.display = 'none';
             }, 1000);
         }
 
-        function renderQuickLog() {
-    const container = document.getElementById('quickLog');
-    const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">اضغط مطولاً للتعديل أو الحذف</p>';
-    
-    archive.slice(0, 10).forEach((item, index) => {
-        const div = document.createElement('div');
-        div.className = 'log-item';
-        div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.hours}</span>`;
-        
-        // منع القائمة الافتراضية للموبايل وتشغيل القائمة بتاعتنا
-        div.oncontextmenu = (e) => {
-            e.preventDefault();
-            showContextMenu(e.pageX, e.pageY, index);
-        };
-        container.appendChild(div);
-    });
-}
+        async function syncToGoogle() {
+            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            if(archive.length === 0) return alert("لا يوجد بيانات");
+            showToast("جاري المزامنة...");
+            for(let item of archive) {
+                await fetch(SCRIPT_URL + "?" + new URLSearchParams({date: item.date, totalHours: item.hours}), {method:'POST'});
+            }
+            alert("تمت المزامنة بنجاح!");
+        }
 
         function openMenu() { document.getElementById('menuModal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showArchive() { alert("تظهر السجلات في القائمة الرئيسية بالأسفل، أو يمكنك المزامنة للشيت."); }
+        function showArchive() { alert("السجلات تظهر بالأسفل في القائمة الرئيسية."); }
         function changePassPrompt() {
             const newPass = prompt("أدخل كلمة السر الجديدة:");
-            if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم تغيير الباسورد بنجاح"); }
+            if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم التغيير!"); }
         }
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.bottom = "30px";
-            setTimeout(() => t.style.bottom = "-60px", 3000);
-        }
-        // إنشاء عنصر القائمة في الصفحة
-let selectedLogIndex = null;
-
-// دالة تفتح مودال التعديل وتملأ البيانات القديمة
-function editEntry() {
-    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    let item = archive[selectedIndex];
-    selectedLogIndex = selectedIndex;
-    
-    const hrsMatch = item.hours.match(/(\d+)\s*س/);
-    const minsMatch = item.hours.match(/(\d+)\s*د/);
-    
-    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
-    document.getElementById('editHrs').value = hrsMatch ? hrsMatch[1] : 0;
-    document.getElementById('editMins').value = minsMatch ? minsMatch[1] : 0;
-    
-    if(document.getElementById('menuModal')) closeModal('menuModal');
-    document.getElementById('editEntryModal').style.display = 'flex';
-}
-
-function saveEditedEntry() {
-    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    const hrs = document.getElementById('editHrs').value || 0;
-    const mins = document.getElementById('editMins').value || 0;
-    
-    archive[selectedLogIndex].hours = `${hrs} س و ${mins} د`;
-    localStorage.setItem('user_archive', JSON.stringify(archive));
-    
-    closeModal('editEntryModal');
-    renderQuickLog();
-    showToast("تم تحديث السجل بنجاح");
-}
-
-function deleteEntry() {
-    selectedLogIndex = selectedIndex;
-    document.getElementById('deleteConfirmModal').style.display = 'flex';
-}
-
-function confirmDeleteEntry() {
-    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    archive.splice(selectedLogIndex, 1);
-    localStorage.setItem('user_archive', JSON.stringify(archive));
-    
-    closeModal('deleteConfirmModal');
-    renderQuickLog();
-    showToast("تم الحذف");
-}
-}
-    }
-}
-
-function editEntry() {
-    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    const newDate = prompt("تعديل التاريخ (DD/MM/YYYY):", archive[selectedIndex].date);
-    const newHours = prompt("تعديل الساعات (مثال: 8 س و 30 د):", archive[selectedIndex].hours);
-    
-    if(newDate && newHours) {
-        archive[selectedIndex].date = newDate;
-        archive[selectedIndex].hours = newHours;
-        localStorage.setItem('user_archive', JSON.stringify(archive));
-        renderQuickLog();
-    }
-}
-    </script>
-</body>
-</html>
+        function show
