@@ -136,17 +136,38 @@
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8Bayque38t00AZ7dyuPOt_MTgY6LgpMNEgQUwB2YJa71YnpiNwC0lg3Uaom7_0pDk/exec";
-        let pendingAction = null;
-        let timerInterval;
+let pendingAction = null;
+let timerInterval;
+let selectedIndex = null;      // تأكد من وجود السطر ده
+let selectedLogIndex = null;   // تأكد من وجود السطر ده
 
-        window.onload = () => {
-            setTimeout(() => {
-                document.getElementById('splashScreen').style.opacity = '0';
-                setTimeout(() => document.getElementById('splashScreen').style.display = 'none', 800);
-            }, 2000);
-            renderQuickLog();
-            checkActiveSession();
-        };
+window.onload = () => {
+    setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 800);
+        }
+    }, 2000);
+    renderQuickLog();
+    checkActiveSession();
+    const menu = document.createElement('div');
+menu.className = 'context-menu';
+menu.innerHTML = `
+    <div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div>
+    <div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>
+`;
+document.body.appendChild(menu);
+
+function showContextMenu(x, y, index) {
+    selectedIndex = index;
+    menu.style.display = 'block';
+    menu.style.left = x + 'px';
+    menu.style.top = y + 'px';
+}
+
+document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
+};
 
         function askPassword(action) {
             pendingAction = action;
@@ -275,7 +296,6 @@ function editEntry() {
     let item = archive[selectedIndex];
     selectedLogIndex = selectedIndex;
     
-    // استخراج الأرقام من النص (مثال: "8 س و 30 د")
     const hrsMatch = item.hours.match(/(\d+)\s*س/);
     const minsMatch = item.hours.match(/(\d+)\s*د/);
     
@@ -283,7 +303,7 @@ function editEntry() {
     document.getElementById('editHrs').value = hrsMatch ? hrsMatch[1] : 0;
     document.getElementById('editMins').value = minsMatch ? minsMatch[1] : 0;
     
-    closeModal('menuModal'); // لو القائمة مفتوحة اقفلها
+    if(document.getElementById('menuModal')) closeModal('menuModal');
     document.getElementById('editEntryModal').style.display = 'flex';
 }
 
@@ -313,6 +333,7 @@ function confirmDeleteEntry() {
     closeModal('deleteConfirmModal');
     renderQuickLog();
     showToast("تم الحذف");
+}
 }
     }
 }
