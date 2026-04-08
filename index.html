@@ -4,167 +4,176 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>نظام تسجيل الساعات الاحترافي</title>
+    <title>نظام الحضور المحمي</title>
     <style>
         :root { --gold: #ffd700; --bg: #0a0a0a; --card: #161616; --text: #ffffff; --danger: #ff4b2b; --success: #28a745; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-        body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow: hidden; }
+        body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow-x: hidden; }
 
         /* شاشة البداية */
-        #splashScreen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 99999; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; text-align: center;
-            transition: opacity 0.8s ease;
-        }
-        .splash-logo { color: var(--gold); font-size: 2.2rem; font-weight: bold; margin-bottom: 20px; letter-spacing: 1px; }
-        .produced-by { color: #555; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; }
-        .dev-name { color: var(--text); font-size: 1.2rem; font-weight: 300; margin-top: 5px; }
+        #splashScreen { position: fixed; inset: 0; background: #000; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.8s; }
+        .splash-logo { color: var(--gold); font-size: 2rem; font-weight: bold; margin-bottom: 10px; }
 
-        /* الواجهة الرئيسية */
+        /* الواجهة */
         header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222; }
-        .settings-btn { background: none; border: none; color: var(--gold); font-size: 1.5rem; cursor: pointer; }
+        .main-card { background: var(--card); width: 92%; max-width: 380px; border-radius: 25px; padding: 25px; margin-top: 20px; border: 1px solid #222; text-align: center; }
+        .timer-display { font-size: 3.5rem; color: var(--gold); font-family: monospace; margin: 15px 0; font-weight: bold; }
         
-        .main-card { background: var(--card); width: 90%; max-width: 380px; border-radius: 25px; padding: 30px; margin-top: 40px; border: 1px solid #222; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .timer-display { font-size: 3rem; color: var(--gold); font-family: monospace; margin: 20px 0; font-weight: bold; }
-        
-        .btn { width: 100%; padding: 18px; border-radius: 15px; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; transition: 0.3s; margin-top: 10px; }
+        .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-in { background: var(--success); color: white; }
         .btn-out { background: var(--danger); color: white; }
-        .btn-disabled { background: #333; color: #666; cursor: not-allowed; }
 
-        /* الأرشيف والمودال */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; padding: 20px; }
-        .modal-content { background: var(--card); border-radius: 20px; padding: 20px; max-height: 80vh; overflow-y: auto; border: 1px solid #333; }
-        .history-item { padding: 15px; border-bottom: 1px solid #222; display: flex; justify-content: space-between; align-items: center; }
-        .history-date { color: #888; font-size: 0.8rem; }
-        .history-hours { color: var(--gold); font-weight: bold; }
+        /* السجل الخارجي */
+        .quick-log { width: 92%; max-width: 380px; margin-top: 20px; flex: 1; overflow-y: auto; }
+        .log-item { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-right: 4px solid var(--gold); font-size: 0.9rem; }
 
+        /* المودالات */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-content { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; max-width: 350px; border: 1px solid #333; }
+        .modal input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; background: #000; color: #fff; border: 1px solid #444; text-align: center; font-size: 1.2rem; }
+        
         #toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: bold; transition: 0.5s; z-index: 10000; }
     </style>
 </head>
 <body>
 
     <div id="splashScreen">
-        <div class="splash-logo">نظام الحضور</div>
-        <div class="produced-by">Produced by</div>
-        <div class="dev-name">[Ayman]</div>
+        <div class="splash-logo">نظام الحضور الذكي</div>
+        <div style="color:#555; letter-spacing:2px">PRODUCED BY</div>
+        <div id="Ayman" style="color:#fff; margin-top:5px">اسم المطور</div>
     </div>
 
-    <div id="toast">تم الإرسال والحفظ ✅</div>
+    <div id="toast">تمت العملية بنجاح ✅</div>
 
     <header>
         <div style="width:30px"></div>
         <h2 style="color:var(--gold)">تسجيل العمل</h2>
-        <button class="settings-btn" onclick="openArchive()">⚙️</button>
+        <button style="background:none; border:none; color:var(--gold); font-size:1.5rem" onclick="openMenu()">⚙️</button>
     </header>
 
     <div class="main-card">
-        <div id="currentDate" style="color:#666; margin-bottom:10px"></div>
-        <div class="timer-display" id="timer">00:00</div>
-        <div id="statusText" style="margin-bottom:20px; color:#aaa">جاهز للبدء</div>
-        
-        <button id="btnIn" class="btn btn-in" onclick="startWork()">تسجيل حضور</button>
-        <button id="btnOut" class="btn btn-out" onclick="endWork()" style="display:none">انصراف وحفظ</button>
+        <div id="timer" class="timer-display">00:00</div>
+        <button id="btnIn" class="btn btn-in" onclick="askPassword('in')">تسجيل حضور</button>
+        <button id="btnOut" class="btn btn-out" onclick="askPassword('out')" style="display:none">انصراف وحفظ</button>
     </div>
 
-    <div id="archiveModal" class="modal">
+    <div class="quick-log" id="quickLog">
+        <p style="color:#444; text-align:center">آخر السجلات</p>
+    </div>
+
+    <div id="passModal" class="modal">
         <div class="modal-content">
-            <h3 style="color:var(--gold); margin-bottom:20px; text-align:center;">الأرشيف العام (دورة 26-25)</h3>
-            <div id="historyList"></div>
-            <button class="btn" style="background:#444; color:#fff;" onclick="closeArchive()">إغلاق</button>
+            <h3 id="passTitle" style="color:var(--gold); text-align:center">أدخل كلمة السر</h3>
+            <input type="password" id="passInput" placeholder="****" inputmode="numeric">
+            <button class="btn btn-in" onclick="verifyPassword()">تأكيد</button>
+            <button class="btn" style="background:#333; color:#fff" onclick="closeModal('passModal')">إلغاء</button>
+        </div>
+    </div>
+
+    <div id="menuModal" class="modal">
+        <div class="modal-content">
+            <h3 style="color:var(--gold); text-align:center; margin-bottom:15px">لوحة التحكم</h3>
+            <button class="btn" style="background:#222; color:var(--gold)" onclick="showArchive()">📁 الأرشيف العام</button>
+            <button class="btn" style="background:#222; color:#fff" onclick="changePassPrompt()">🔑 تغيير كلمة السر</button>
+            <button class="btn" style="background:var(--success); color:#fff" onclick="syncToGoogle()">☁️ مزامنة يدوية للشيت</button>
+            <button class="btn" style="background:#444; color:#fff" onclick="closeModal('menuModal')">إغلاق</button>
         </div>
     </div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx8Bayque38t00AZ7dyuPOt_MTgY6LgpMNEgQUwB2YJa71YnpiNwC0lg3Uaom7_0pDk/exec";
+        let pendingAction = null;
+        let timerInterval;
 
-        // شاشة البداية
-        window.addEventListener('load', () => {
-            document.getElementById('currentDate').innerText = new Date().toLocaleDateString('ar-EG', {weekday:'long', day:'numeric', month:'long'});
+        window.onload = () => {
             setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                splash.style.opacity = '0';
-                setTimeout(() => splash.style.display = 'none', 800);
+                document.getElementById('splashScreen').style.opacity = '0';
+                setTimeout(() => document.getElementById('splashScreen').style.display = 'none', 800);
             }, 2000);
-            checkSession();
-        });
+            renderQuickLog();
+            checkActiveSession();
+        };
 
-        function checkSession() {
-            const startTime = localStorage.getItem('work_start');
-            if(startTime) {
-                document.getElementById('btnIn').style.display = 'none';
-                document.getElementById('btnOut').style.display = 'block';
-                document.getElementById('statusText').innerText = "قيد العمل حالياً...";
-                startTimerUpdate(new Date(startTime));
+        function askPassword(action) {
+            pendingAction = action;
+            document.getElementById('passInput').value = "";
+            document.getElementById('passModal').style.display = 'flex';
+            document.getElementById('passInput').focus();
+        }
+
+        function verifyPassword() {
+            const input = document.getElementById('passInput').value;
+            const savedPass = localStorage.getItem('app_pass') || '1234';
+            if(input === savedPass) {
+                closeModal('passModal');
+                pendingAction === 'in' ? startWork() : endWork();
+            } else {
+                alert("كلمة سر خاطئة!");
             }
         }
 
         function startWork() {
             const now = new Date();
             localStorage.setItem('work_start', now.toISOString());
-            location.reload();
+            updateUI(true);
+            startTimer(now);
+            showToast("تم تسجيل الحضور");
         }
 
         async function endWork() {
             const startTime = new Date(localStorage.getItem('work_start'));
             const endTime = new Date();
-            
             const diffMs = endTime - startTime;
             const diffHrs = Math.floor(diffMs / 3600000);
             const diffMins = Math.round(((diffMs % 3600000) / 60000));
             const totalStr = `${diffHrs} س و ${diffMins} د`;
+            const dateStr = endTime.toLocaleDateString('en-GB');
 
-            // إرسال لجوجل شيت (عمودين فقط كما طلبت)
-            const dateStr = endTime.toLocaleDateString('en-GB'); 
-            const params = new URLSearchParams({ date: dateStr, totalHours: totalStr });
-
-            try {
-                showToast("جاري الحفظ...");
-                await fetch(SCRIPT_URL + "?" + params.toString(), { method: 'POST' });
-                
-                // حفظ في الأرشيف المحلي
-                saveToLocalArchive(dateStr, totalStr);
-                
-                localStorage.removeItem('work_start');
-                showToast("تم الحفظ بنجاح ✅");
-                setTimeout(() => location.reload(), 2000);
-            } catch (e) {
-                alert("مشكلة في الإرسال.. تأكد من الإنترنت");
-            }
-        }
-
-        function saveToLocalArchive(date, hours) {
+            // حفظ محلي فوراً
             let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            archive.unshift({ date, hours, timestamp: new Date().toISOString() });
+            archive.unshift({ date: dateStr, hours: totalStr });
             localStorage.setItem('user_archive', JSON.stringify(archive));
-        }
-
-        function openArchive() {
-            const list = document.getElementById('historyList');
-            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            list.innerHTML = "";
-
-            if(archive.length === 0) {
-                list.innerHTML = "<p style='text-align:center; color:#666; padding:20px;'>السجل فارغ</p>";
-            } else {
-                // منطق دورة الشهر (من 26 لـ 25)
-                archive.forEach(item => {
-                    list.innerHTML += `
-                        <div class="history-item">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-hours">${item.hours}</div>
-                        </div>
-                    `;
-                });
+            
+            // محاولة إرسال
+            try {
+                await fetch(SCRIPT_URL + "?" + new URLSearchParams({date: dateStr, totalHours: totalStr}), {method:'POST'});
+                showToast("تم الحفظ والمزامنة ✅");
+            } catch(e) {
+                showToast("حفظ محلي (لا يوجد نت)");
             }
-            document.getElementById('archiveModal').style.display = 'flex';
+
+            localStorage.removeItem('work_start');
+            clearInterval(timerInterval);
+            updateUI(false);
+            renderQuickLog();
         }
 
-        function closeArchive() { document.getElementById('archiveModal').style.display = 'none'; }
+        async function syncToGoogle() {
+            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            if(archive.length === 0) return alert("لا يوجد بيانات للمزامنة");
+            showToast("جاري المزامنة الشاملة...");
+            for(let item of archive) {
+                await fetch(SCRIPT_URL + "?" + new URLSearchParams({date: item.date, totalHours: item.hours}), {method:'POST'});
+            }
+            alert("تم إرسال كافة السجلات بنجاح!");
+        }
 
-        function startTimerUpdate(start) {
-            setInterval(() => {
+        function checkActiveSession() {
+            const start = localStorage.getItem('work_start');
+            if(start) {
+                updateUI(true);
+                startTimer(new Date(start));
+            }
+        }
+
+        function updateUI(working) {
+            document.getElementById('btnIn').style.display = working ? 'none' : 'block';
+            document.getElementById('btnOut').style.display = working ? 'block' : 'none';
+            if(!working) document.getElementById('timer').innerText = "00:00";
+        }
+
+        function startTimer(start) {
+            timerInterval = setInterval(() => {
                 const diff = new Date() - start;
                 const h = Math.floor(diff / 3600000).toString().padStart(2,'0');
                 const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
@@ -172,10 +181,25 @@
             }, 1000);
         }
 
+        function renderQuickLog() {
+            const container = document.getElementById('quickLog');
+            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
+            container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">آخر السجلات</p>';
+            archive.slice(0, 5).forEach(item => {
+                container.innerHTML += `<div class="log-item"><span>📅 ${item.date}</span><span>⏱️ ${item.hours}</span></div>`;
+            });
+        }
+
+        function openMenu() { document.getElementById('menuModal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function showArchive() { alert("تظهر السجلات في القائمة الرئيسية بالأسفل، أو يمكنك المزامنة للشيت."); }
+        function changePassPrompt() {
+            const newPass = prompt("أدخل كلمة السر الجديدة:");
+            if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم تغيير الباسورد بنجاح"); }
+        }
         function showToast(msg) {
             const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.style.bottom = "30px";
+            t.innerText = msg; t.style.bottom = "30px";
             setTimeout(() => t.style.bottom = "-60px", 3000);
         }
     </script>
