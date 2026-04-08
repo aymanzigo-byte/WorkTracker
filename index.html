@@ -265,13 +265,24 @@
         }
 
         function startTimer(start) {
-            timerInterval = setInterval(() => {
-                const diff = new Date() - start;
-                const h = Math.floor(diff / 3600000).toString().padStart(2,'0');
-                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2,'0');
-                document.getElementById('timer').innerText = `${h}:${m}`;
-            }, 1000);
+    // نمسح أي عداد قديم شغال عشان ميسرعش الوقت
+    if(timerInterval) clearInterval(timerInterval);
+
+    timerInterval = setInterval(() => {
+        const now = new Date();
+        const diff = now - start;
+
+        // حساب الساعات والدقائق
+        const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+        const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+        
+        // تحديث العنصر في الصفحة
+        const timerElement = document.getElementById('timer');
+        if(timerElement) {
+            timerElement.innerText = `${h}:${m}`;
         }
+    }, 1000);
+}
 
         async function syncToGoogle() {
             const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
