@@ -120,7 +120,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyN-hheBBzbsEnuUYI3iUR4kx3GGWklv0SaoenrKJXtZjXzFOHq4lsFSJffMrg3FSoGeg/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLiGfBSGistlkqXGDmzQ1AM1Mz8PUz9pW-3Y-iyOPFtmb0EAyzCmw3PDx4AJ18UYfeUw/exec";
         let pendingAction = null;
         let timerInterval;
         let selectedIndex = null;
@@ -177,22 +177,37 @@
         }
 
         async function endWork() {
-    const startTime = new Date(localStorage.getItem('work_start'));
-    const endTime = new Date();
+    const startIso = localStorage.getItem('work_start');
+    const startTime = new Date(startIso); // ده تاريخ وقت الحضور
+    const endTime = new Date(); // ده وقت الانصراف الحالي
+    
+    // تنسيق الوقت
+    const formatTime = (date) => date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
+    const inTime = formatTime(startTime);
+    const outTime = formatTime(endTime);
+
     const diffMs = endTime - startTime;
     const diffHrs = Math.floor(diffMs / 3600000);
-    const diffMins = Math.round(((diffMs % 3600000) / 60000));
-    const totalStr = `${diffHrs} س و ${diffMins} د`;
-    const dateStr = endTime.toLocaleDateString('en-GB');
+    const diffMins = Math.floor((diffMs % 3600000) / 60000);
+    
+    const totalStr = `${diffHrs} ساعة و ${diffMins} دقيقة`;
+    
+    // التعديل هنا: التاريخ هيكون بتاع وقت الحضور (startTime)
+    const dateStr = startTime.toLocaleDateString('en-GB'); 
 
     let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
     archive.unshift({ date: dateStr, hours: totalStr });
     localStorage.setItem('user_archive', JSON.stringify(archive));
     
     try {
-        const response = await fetch(SCRIPT_URL, {
+        await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({date: dateStr, totalHours: totalStr})
+            body: JSON.stringify({
+                inTime: inTime,
+                outTime: outTime,
+                totalDuration: totalStr,
+                originalStartDate: startIso // هنبعت التاريخ الأصلي للشيت
+            })
         });
         showToast("تم الحفظ والمزامنة ✅");
     } catch(e) { 
