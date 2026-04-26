@@ -118,6 +118,14 @@
             <button class="btn" style="background:#444; color:#fff" onclick="closeModal('menuModal')">إغلاق</button>
         </div>
     </div>
+    <div id="archiveModal" class="modal">
+    <div class="modal-content" style="max-width: 380px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="color:var(--gold); text-align:center; margin-bottom:15px">📁 أرشيف السجلات</h3>
+        <div id="monthsContainer">
+            </div>
+        <button class="btn" style="background:#444; color:#fff; margin-top:15px" onclick="closeModal('archiveModal')">رجوع</button>
+    </div>
+</div>
 
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLiGfBSGistlkqXGDmzQ1AM1Mz8PUz9pW-3Y-iyOPFtmb0EAyzCmw3PDx4AJ18UYfeUw/exec";
@@ -178,10 +186,9 @@
 
         async function endWork() {
     const startIso = localStorage.getItem('work_start');
-    const startTime = new Date(startIso); // ده تاريخ وقت الحضور
-    const endTime = new Date(); // ده وقت الانصراف الحالي
+    const startTime = new Date(startIso);
+    const endTime = new Date();
     
-    // تنسيق الوقت
     const formatTime = (date) => date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
     const inTime = formatTime(startTime);
     const outTime = formatTime(endTime);
@@ -189,30 +196,33 @@
     const diffMs = endTime - startTime;
     const diffHrs = Math.floor(diffMs / 3600000);
     const diffMins = Math.floor((diffMs % 3600000) / 60000);
+    const totalStr = `${diffHrs} س و ${diffMins} د`;
     
-    const totalStr = `${diffHrs} ساعة و ${diffMins} دقيقة`;
-    
-    // التعديل هنا: التاريخ هيكون بتاع وقت الحضور (startTime)
-    const dateStr = startTime.toLocaleDateString('en-GB'); 
+    const dateStr = startTime.toLocaleDateString('en-GB'); // تاريخ الحضور
+    const monthYear = startTime.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }); // اسم الشهر
 
-    let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    archive.unshift({ date: dateStr, hours: totalStr });
-    localStorage.setItem('user_archive', JSON.stringify(archive));
+    // تنظيم الأرشيف بنظام الشهور
+    let archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    if (!archive[monthYear]) archive[monthYear] = [];
     
+    archive[monthYear].unshift({
+        date: dateStr,
+        in: inTime,
+        out: outTime,
+        total: totalStr,
+        timestamp: startTime.getTime()
+    });
+    
+    localStorage.setItem('user_archive_v2', JSON.stringify(archive));
+    
+    // إرسال للشيت
     try {
         await fetch(SCRIPT_URL, {
             method: 'POST',
-            body: JSON.stringify({
-                inTime: inTime,
-                outTime: outTime,
-                totalDuration: totalStr,
-                originalStartDate: startIso // هنبعت التاريخ الأصلي للشيت
-            })
+            body: JSON.stringify({ inTime: inTime, outTime: outTime, totalDuration: totalStr, originalStartDate: startIso })
         });
         showToast("تم الحفظ والمزامنة ✅");
-    } catch(e) { 
-        showToast("حفظ محلي (لا يوجد نت)"); 
-    }
+    } catch(e) { showToast("حفظ محلي فقط"); }
 
     localStorage.removeItem('work_start');
     clearInterval(timerInterval);
@@ -314,7 +324,55 @@
 
         function openMenu() { document.getElementById('menuModal').style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showArchive() { alert("السجلات تظهر بالأسفل في القائمة الرئيسية."); }
+        function showArchive() {
+    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    const container = document.getElementById('monthsContainer');
+    container.innerHTML = '';
+    closeModal('menuModal'); // اقفل لوحة التحكم الأول
+    document.getElementById('archiveModal').style.display = 'flex';
+
+    if (Object.keys(archive).length === 0) {
+        container.innerHTML = '<p style="text-align:center; color:#666">لا توجد سجلات بعد</p>';
+        return;
+    }
+
+    for (const month in archive) {
+        // زرار الشهر
+        const monthBtn = document.createElement('button');
+        monthBtn.className = 'btn';
+        monthBtn.style = "background:#222; color:var(--gold); margin-bottom:5px; text-align:right; display:flex; justify-content:space-between";
+        monthBtn.innerHTML = `<span>${month}</span> <span>▼</span>`;
+        
+        // حاوية أيام الشهر
+        const daysDiv = document.createElement('div');
+        daysDiv.style.display = 'none';
+        daysDiv.style.background = '#000';
+        daysDiv.style.padding = '10px';
+        daysDiv.style.borderRadius = '10px';
+        daysDiv.style.marginBottom = '10px';
+
+        archive[month].forEach(item => {
+            const dayEntry = document.createElement('div');
+            dayEntry.style = "padding:10px; border-bottom:1px solid #222; font-size:0.85rem";
+            dayEntry.innerHTML = `
+                <div style="color:var(--gold)">📅 ${item.date}</div>
+                <div style="display:flex; justify-content:space-between; margin-top:5px">
+                    <span>🎬 ${item.in}</span>
+                    <span>🚪 ${item.out}</span>
+                    <span style="color:var(--success)">⏱️ ${item.total}</span>
+                </div>
+            `;
+            daysDiv.appendChild(dayEntry);
+        });
+
+        monthBtn.onclick = () => {
+            daysDiv.style.display = daysDiv.style.display === 'none' ? 'block' : 'none';
+        };
+
+        container.appendChild(monthBtn);
+        container.appendChild(daysDiv);
+    }
+}
         function changePassPrompt() {
             const newPass = prompt("أدخل كلمة السر الجديدة:");
             if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم التغيير!"); }
