@@ -82,23 +82,23 @@
     </div>
 
     <div id="editEntryModal" class="modal">
-        <div class="modal-content">
-            <h3 style="color:var(--gold); text-align:center">تعديل السجل</h3>
-            <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px; text-align:center"></p>
-            <div class="edit-grid">
-                <div class="edit-field">
-                    <label>الساعات</label>
-                    <input type="number" id="editHrs" placeholder="0">
-                </div>
-                <div class="edit-field">
-                    <label>الدقائق</label>
-                    <input type="number" id="editMins" placeholder="0">
-                </div>
+    <div class="modal-content">
+        <h3 style="color:var(--gold); text-align:center">تعديل سجل العمل</h3>
+        <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px; text-align:center"></p>
+        <div class="edit-grid">
+            <div class="edit-field">
+                <label>وقت الحضور</label>
+                <input type="time" id="editInTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
             </div>
-            <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
-            <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
+            <div class="edit-field">
+                <label>وقت الانصراف</label>
+                <input type="time" id="editOutTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
+            </div>
         </div>
+        <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
+        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
     </div>
+</div>
 
     <div id="deleteConfirmModal" class="modal">
         <div class="modal-content" style="border-color: var(--danger)">
@@ -230,41 +230,115 @@
     renderQuickLog();
 }
         function renderQuickLog() {
-            const container = document.getElementById('quickLog');
-            const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">اضغط مطولاً للتعديل أو الحذف</p>';
-            archive.slice(0, 10).forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'log-item';
-                div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.hours}</span>`;
-                div.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e.pageX, e.pageY, index); };
-                container.appendChild(div);
-            });
+    const container = document.getElementById('quickLog');
+    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    
+    container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">سجلات الأسبوع الحالي</p>';
+    
+    let allEntries = [];
+    for (const month in archive) {
+        archive[month].forEach(item => {
+            allEntries.push(item);
+        });
+    }
+    
+    // ترتيب السجلات من الأحدث للأقدم
+    allEntries.sort((a, b) => b.timestamp - a.timestamp);
+    
+    // مصفوفة لترتيب أيام الأسبوع بدءاً من السبت
+    const dayOrder = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
+    
+    // فلترة السجلات لتعرض آخر 7 سجلات فريدة للأسبوع الحالي
+    const latestEntries = allEntries.slice(0, 7);
+    
+    if (latestEntries.length === 0) {
+        container.innerHTML += '<p style="color:#666; text-align:center; font-size:0.85rem">لا توجد سجلات مؤخراً</p>';
+        return;
+    }
+    
+    latestEntries.forEach((item, index) => {
+        // تحديد اسم اليوم بالعربي بناءً على التاريخ المحفوظ
+        const parts = item.date.split('/');
+        const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+        const daysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+        const dayName = daysAr[dateObj.getDay()];
+        
+        const div = document.createElement('div');
+        div.className = 'log-item';
+        
+        // التحقق لو كان اليوم هو الثلاثاء (يوم الإجازة) لتمييزه بلون أخضر مشع
+        if (dayName === "الثلاثاء") {
+            div.style.borderRight = "4px solid #39ff14"; // أخضر مشع للشرطة الجانبية
+            div.style.boxShadow = "0 0 10px rgba(57, 255, 20, 0.2)"; // تأثير توهج خفيف
+            div.innerHTML = `<span style="color: #39ff14; font-weight: bold;">📅 ${item.date} (إجازة)</span><span style="color: #39ff14;">⏱️ ${item.total}</span>`;
+        } else {
+            div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.total}</span>`;
         }
+        
+        div.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e.pageX, e.pageY, index); };
+        
+        // دعم اللمس المطول للهواتف لتفعيل قائمة التعديل
+        let touchTimer;
+        div.ontouchstart = (e) => { touchTimer = setTimeout(() => showContextMenu(e.touches[0].pageX, e.touches[0].pageY, index), 800); };
+        div.ontouchend = () => clearTimeout(touchTimer);
+        
+        container.appendChild(div);
+    });
+}
 
         function editEntry() {
-            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            selectedLogIndex = selectedIndex;
-            let item = archive[selectedIndex];
-            const hrsMatch = item.hours.match(/(\d+)\s*س/);
-            const minsMatch = item.hours.match(/(\d+)\s*د/);
-            document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
-            document.getElementById('editHrs').value = hrsMatch ? hrsMatch[1] : 0;
-            document.getElementById('editMins').value = minsMatch ? minsMatch[1] : 0;
-            closeModal('menuModal');
-            document.getElementById('editEntryModal').style.display = 'flex';
-        }
+    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    
+    // تجميع السجلات للوصول للسجل المختار بدقة
+    let allEntries = [];
+    let keysMapping = []; // لحفظ الإحداثيات الأصلية للسجل في الـ LocalStorage
+    
+    for (const month in archive) {
+        archive[month].forEach((item, idx) => {
+            allEntries.push(item);
+            keysMapping.push({ month: month, index: idx });
+        });
+    }
+    allEntries.sort((a, b) => b.timestamp - a.timestamp);
+    
+    selectedLogIndex = keysMapping[selectedIndex]; // حفظ المسار الأصلي للتعديل
+    const item = allEntries[selectedIndex];
+    
+    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
+    // إذا لم يكن الوقت المسجل يحتوي على صيغة الحقول (HH:MM)، نضع قيمة افتراضية
+    document.getElementById('editInTime').value = item.in || "09:00";
+    document.getElementById('editOutTime').value = item.out || "17:00";
+    
+    closeModal('menuModal');
+    document.getElementById('editEntryModal').style.display = 'flex';
+}
 
-        function saveEditedEntry() {
-            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            const hrs = document.getElementById('editHrs').value || 0;
-            const mins = document.getElementById('editMins').value || 0;
-            archive[selectedLogIndex].hours = `${hrs} س و ${mins} د`;
-            localStorage.setItem('user_archive', JSON.stringify(archive));
-            closeModal('editEntryModal');
-            renderQuickLog();
-            showToast("تم تحديث السجل بنجاح");
-        }
+        function editEntry() {
+    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    
+    // تجميع السجلات للوصول للسجل المختار بدقة
+    let allEntries = [];
+    let keysMapping = []; // لحفظ الإحداثيات الأصلية للسجل في الـ LocalStorage
+    
+    for (const month in archive) {
+        archive[month].forEach((item, idx) => {
+            allEntries.push(item);
+            keysMapping.push({ month: month, index: idx });
+        });
+    }
+    allEntries.sort((a, b) => b.timestamp - a.timestamp);
+    
+    selectedLogIndex = keysMapping[selectedIndex]; // حفظ المسار الأصلي للتعديل
+    const item = allEntries[selectedIndex];
+    
+    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
+    // إذا لم يكن الوقت المسجل يحتوي على صيغة الحقول (HH:MM)، نضع قيمة افتراضية
+    document.getElementById('editInTime').value = item.in || "09:00";
+    document.getElementById('editOutTime').value = item.out || "17:00";
+    
+    closeModal('menuModal');
+    document.getElementById('editEntryModal').style.display = 'flex';
+}
 
         function deleteEntry() {
             selectedLogIndex = selectedIndex;
