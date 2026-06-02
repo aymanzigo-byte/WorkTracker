@@ -66,6 +66,10 @@
         <div id="timer" class="timer-display">00:00:00</div>
         <button id="btnIn" class="btn btn-in" onclick="askPassword('in')">تسجيل حضور</button>
         <button id="btnOut" class="btn btn-out" onclick="askPassword('out')" style="display:none">انصراف وحفظ</button>
+        
+        <div id="monthTotalDisplay" style="margin-top: 15px; font-size: 0.9rem; color: var(--gold); border-top: 1px solid #222; padding-top: 10px;">
+            📊 إجمالي ساعات الشهر الحالي: <span id="currentMonthHours" style="font-weight: bold; color: #fff;">0 س و 0 د</span>
+        </div>
     </div>
 
     <div class="quick-log" id="quickLog">
@@ -151,6 +155,26 @@
             renderQuickLog();
             checkActiveSession();
         };
+
+        function calculateTotalHours(entriesArray) {
+    let totalMinutes = 0;
+    
+    entriesArray.forEach(item => {
+        // فك النص (مثال: "8 س و 15 د") لاستخراج الأرقام
+        const hrsMatch = item.total.match(/(\d+)\s*س/);
+        const minsMatch = item.total.match(/(\d+)\s*د/);
+        
+        const hrs = hrsMatch ? parseInt(hrsMatch[1]) : 0;
+        const mins = minsMatch ? parseInt(minsMatch[1]) : 0;
+        
+        totalMinutes += (hrs * 60) + mins;
+    });
+    
+    const finalHrs = Math.floor(totalMinutes / 60);
+    const finalMins = totalMinutes % 60;
+    
+    return `${finalHrs} س و ${finalMins} د`;
+}
 
         function showContextMenu(x, y, index) {
             selectedIndex = index;
@@ -240,6 +264,11 @@
         archive[month].forEach(item => {
             allEntries.push(item);
         });
+        // تحديث عداد الشهر الحالي بره في الواجهة
+    const currentMonthName = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+    const currentMonthEntries = archive[currentMonthName] || [];
+    const currentMonthTotal = calculateTotalHours(currentMonthEntries);
+    document.getElementById('currentMonthHours').innerText = currentMonthTotal;
     }
     
     // ترتيب السجلات من الأحدث للأقدم
@@ -313,32 +342,6 @@
     document.getElementById('editEntryModal').style.display = 'flex';
 }
 
-        function editEntry() {
-    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
-    
-    // تجميع السجلات للوصول للسجل المختار بدقة
-    let allEntries = [];
-    let keysMapping = []; // لحفظ الإحداثيات الأصلية للسجل في الـ LocalStorage
-    
-    for (const month in archive) {
-        archive[month].forEach((item, idx) => {
-            allEntries.push(item);
-            keysMapping.push({ month: month, index: idx });
-        });
-    }
-    allEntries.sort((a, b) => b.timestamp - a.timestamp);
-    
-    selectedLogIndex = keysMapping[selectedIndex]; // حفظ المسار الأصلي للتعديل
-    const item = allEntries[selectedIndex];
-    
-    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
-    // إذا لم يكن الوقت المسجل يحتوي على صيغة الحقول (HH:MM)، نضع قيمة افتراضية
-    document.getElementById('editInTime').value = item.in || "09:00";
-    document.getElementById('editOutTime').value = item.out || "17:00";
-    
-    closeModal('menuModal');
-    document.getElementById('editEntryModal').style.display = 'flex';
-}
 
         function deleteEntry() {
             selectedLogIndex = selectedIndex;
@@ -402,7 +405,7 @@
     const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
     const container = document.getElementById('monthsContainer');
     container.innerHTML = '';
-    closeModal('menuModal'); // اقفل لوحة التحكم الأول
+    closeModal('menuModal');
     document.getElementById('archiveModal').style.display = 'flex';
 
     if (Object.keys(archive).length === 0) {
@@ -425,19 +428,28 @@
         daysDiv.style.borderRadius = '10px';
         daysDiv.style.marginBottom = '10px';
 
+        // رص الأيام
         archive[month].forEach(item => {
             const dayEntry = document.createElement('div');
             dayEntry.style = "padding:10px; border-bottom:1px solid #222; font-size:0.85rem";
             dayEntry.innerHTML = `
                 <div style="color:var(--gold)">📅 ${item.date}</div>
                 <div style="display:flex; justify-content:space-between; margin-top:5px">
-                    <span>🎬 ${item.in}</span>
-                    <span>🚪 ${item.out}</span>
+                    <span>🎬 ${item.in || '--:--'}</span>
+                    <span>🚪 ${item.out || '--:--'}</span>
                     <span style="color:var(--success)">⏱️ ${item.total}</span>
                 </div>
             `;
             daysDiv.appendChild(dayEntry);
         });
+
+        // --- التعديل الجديد: حساب وإضافة خانة الإجمالي في آخر قائمة الأيام ---
+        const totalHoursForMonth = calculateTotalHours(archive[month]);
+        const totalRow = document.createElement('div');
+        totalRow.style = "padding:12px 10px; margin-top:5px; background:#111; border-radius:8px; border:1px dashed var(--gold); text-align:center; font-size:0.9rem; font-weight:bold; color:var(--gold);";
+        totalRow.innerHTML = `🧮 إجمالي الساعات لشهر ${month.split(' ')[0]}: <span style="color:#fff">${totalHoursForMonth}</span>`;
+        daysDiv.appendChild(totalRow);
+        // ------------------------------------------------------------------
 
         monthBtn.onclick = () => {
             daysDiv.style.display = daysDiv.style.display === 'none' ? 'block' : 'none';
