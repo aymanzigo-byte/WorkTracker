@@ -4,46 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>نظام الحضور المحمي - أيمن</title>
+    <title>نظام الحضور الاحترافي - أيمن</title>
     <style>
-        :root { --gold: #ffd700; --bg: #0a0a0a; --card: #161616; --text: #ffffff; --danger: #ff4b2b; --success: #28a745; }
+        :root { --gold: #ffd700; --bg: #0a0a0a; --card: #161616; --text: #ffffff; --danger: #ff4b2b; --success: #28a745; --info: #00bfff; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
         body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; height: 100vh; overflow-x: hidden; }
 
-        /* شاشة البداية */
         #splashScreen { position: fixed; inset: 0; background: #000; z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.8s; }
         .splash-logo { color: var(--gold); font-size: 2rem; font-weight: bold; margin-bottom: 10px; }
 
-        /* الواجهة */
         header { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; padding: 20px; border-bottom: 1px solid #222; }
         .main-card { background: var(--card); width: 92%; max-width: 380px; border-radius: 25px; padding: 25px; margin-top: 20px; border: 1px solid #222; text-align: center; }
         .timer-display { font-size: 3rem; color: var(--gold); font-family: monospace; margin: 15px 0; font-weight: bold; letter-spacing: 2px; }
         
+        /* لوحة الإحصائيات الذكية */
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid #222; }
+        .stat-box { background: #111; padding: 10px; border-radius: 12px; border: 1px solid #222; text-align: center; }
+        .stat-box label { display: block; font-size: 0.75rem; color: #888; margin-bottom: 5px; }
+        .stat-box span { font-size: 0.95rem; font-weight: bold; color: var(--gold); }
+
         .btn { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-in { background: var(--success); color: white; }
         .btn-out { background: var(--danger); color: white; }
 
-        /* السجل الخارجي */
         .quick-log { width: 92%; max-width: 380px; margin-top: 20px; flex: 1; overflow-y: auto; padding-bottom: 20px; }
         .log-item { background: #111; padding: 12px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; border-right: 4px solid var(--gold); font-size: 0.9rem; user-select: none; }
 
-        /* المودالات */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
         .modal-content { background: var(--card); border-radius: 20px; padding: 20px; width: 100%; max-width: 350px; border: 1px solid #333; }
         .modal input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; background: #000; color: #fff; border: 1px solid #444; text-align: center; font-size: 1.2rem; }
         
         #toast { position: fixed; bottom: -60px; left: 50%; transform: translateX(-50%); background: var(--gold); color: #000; padding: 12px 30px; border-radius: 50px; font-weight: bold; transition: 0.5s; z-index: 10000; }
 
-        /* القائمة التقيلة */
         .context-menu { display: none; position: fixed; background: #222; border: 1px solid var(--gold); border-radius: 10px; z-index: 10000; width: 150px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
         .context-menu-item { padding: 12px; cursor: pointer; border-bottom: 1px solid #333; text-align: center; font-size: 0.9rem; }
         .context-menu-item:last-child { border-bottom: none; color: var(--danger); }
 
-        /* التعديل الاحترافي */
         .edit-grid { display: flex; gap: 10px; margin: 20px 0; }
         .edit-field { flex: 1; background: #000; border: 1px solid #444; border-radius: 10px; padding: 10px; color: #fff; text-align: center; }
         .edit-field label { display: block; font-size: 0.7rem; color: var(--gold); margin-bottom: 5px; }
-        .edit-field input { width: 100%; background: transparent; border: none; color: #fff; text-align: center; font-size: 1.5rem; outline: none; }
     </style>
 </head>
 <body>
@@ -67,13 +66,24 @@
         <button id="btnIn" class="btn btn-in" onclick="askPassword('in')">تسجيل حضور</button>
         <button id="btnOut" class="btn btn-out" onclick="askPassword('out')" style="display:none">انصراف وحفظ</button>
         
-        <div id="monthTotalDisplay" style="margin-top: 15px; font-size: 0.9rem; color: var(--gold); border-top: 1px solid #222; padding-top: 10px;">
-            📊 إجمالي ساعات الشهر الحالي: <span id="currentMonthHours" style="font-weight: bold; color: #fff;">0 س و 0 د</span>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <label>أيام العمل</label>
+                <span id="statDays">0 يوم</span>
+            </div>
+            <div class="stat-box">
+                <label>صافي الساعات</label>
+                <span id="statTotalHrs">0 س</span>
+            </div>
+            <div class="stat-box" style="grid-column: span 2; border-color: var(--info);">
+                <label style="color: var(--info);">🚀 إجمالي الأوفر تايم</label>
+                <span id="statOvertime" style="color: var(--info);">0 س و 0 د</span>
+            </div>
         </div>
     </div>
 
     <div class="quick-log" id="quickLog">
-        <p style="color:#444; text-align:center">آخر السجلات</p>
+        <p style="color:#444; text-align:center">سجلات الأسبوع الحالي</p>
     </div>
 
     <div id="passModal" class="modal">
@@ -86,23 +96,23 @@
     </div>
 
     <div id="editEntryModal" class="modal">
-    <div class="modal-content">
-        <h3 style="color:var(--gold); text-align:center">تعديل سجل العمل</h3>
-        <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px; text-align:center"></p>
-        <div class="edit-grid">
-            <div class="edit-field">
-                <label>وقت الحضور</label>
-                <input type="time" id="editInTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
+        <div class="modal-content">
+            <h3 style="color:var(--gold); text-align:center">تعديل سجل العمل</h3>
+            <p id="editDateLabel" style="font-size:0.8rem; color:#666; margin-top:5px; text-align:center"></p>
+            <div class="edit-grid">
+                <div class="edit-field">
+                    <label>وقت الحضور</label>
+                    <input type="time" id="editInTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
+                </div>
+                <div class="edit-field">
+                    <label>وقت الانصراف</label>
+                    <input type="time" id="editOutTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
+                </div>
             </div>
-            <div class="edit-field">
-                <label>وقت الانصراف</label>
-                <input type="time" id="editOutTime" style="color:#fff; background:transparent; border:none; font-size:1.2rem; text-align:center; width:100%; outline:none;">
-            </div>
+            <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
+            <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
         </div>
-        <button class="btn btn-in" onclick="saveEditedEntry()">حفظ التعديلات</button>
-        <button class="btn" style="background:#333; color:#fff" onclick="closeModal('editEntryModal')">إلغاء</button>
     </div>
-</div>
 
     <div id="deleteConfirmModal" class="modal">
         <div class="modal-content" style="border-color: var(--danger)">
@@ -122,352 +132,14 @@
             <button class="btn" style="background:#444; color:#fff" onclick="closeModal('menuModal')">إغلاق</button>
         </div>
     </div>
+
     <div id="archiveModal" class="modal">
-    <div class="modal-content" style="max-width: 380px; max-height: 80vh; overflow-y: auto;">
-        <h3 style="color:var(--gold); text-align:center; margin-bottom:15px">📁 أرشيف السجلات</h3>
-        <div id="monthsContainer">
-            </div>
-        <button class="btn" style="background:#444; color:#fff; margin-top:15px" onclick="closeModal('archiveModal')">رجوع</button>
+        <div class="modal-content" style="max-width: 380px; max-height: 80vh; overflow-y: auto; position: relative;">
+            <h3 style="color:var(--gold); text-align:center; margin-bottom:15px; position: sticky; top: 0; background: var(--card); padding: 10px 0;">📁 أرشيف السجلات</h3>
+            <div id="monthsContainer"></div>
+            <button class="btn" style="background:#444; color:#fff; margin-top:15px; position: sticky; bottom: 0;" onclick="closeModal('archiveModal')">إغلاق</button>
+        </div>
     </div>
-</div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyLiGfBSGistlkqXGDmzQ1AM1Mz8PUz9pW-3Y-iyOPFtmb0EAyzCmw3PDx4AJ18UYfeUw/exec";
-        let pendingAction = null;
-        let timerInterval;
-        let selectedIndex = null;
-        let selectedLogIndex = null;
-        const menu = document.createElement('div');
-
-        window.onload = () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                if (splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 800);
-                }
-            }, 2000);
-
-            menu.className = 'context-menu';
-            menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
-            document.body.appendChild(menu);
-
-            renderQuickLog();
-            checkActiveSession();
-        };
-
-        function calculateTotalHours(entriesArray) {
-    let totalMinutes = 0;
-    
-    entriesArray.forEach(item => {
-        // فك النص (مثال: "8 س و 15 د") لاستخراج الأرقام
-        const hrsMatch = item.total.match(/(\d+)\s*س/);
-        const minsMatch = item.total.match(/(\d+)\s*د/);
-        
-        const hrs = hrsMatch ? parseInt(hrsMatch[1]) : 0;
-        const mins = minsMatch ? parseInt(minsMatch[1]) : 0;
-        
-        totalMinutes += (hrs * 60) + mins;
-    });
-    
-    const finalHrs = Math.floor(totalMinutes / 60);
-    const finalMins = totalMinutes % 60;
-    
-    return `${finalHrs} س و ${finalMins} د`;
-}
-
-        function showContextMenu(x, y, index) {
-            selectedIndex = index;
-            menu.style.display = 'block';
-            menu.style.left = x + 'px';
-            menu.style.top = y + 'px';
-        }
-
-        document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
-
-        function askPassword(action) {
-            pendingAction = action;
-            document.getElementById('passInput').value = "";
-            document.getElementById('passModal').style.display = 'flex';
-        }
-
-        function verifyPassword() {
-            const input = document.getElementById('passInput').value;
-            const savedPass = localStorage.getItem('app_pass') || '1234';
-            if(input === savedPass) {
-                closeModal('passModal');
-                pendingAction === 'in' ? startWork() : endWork();
-            } else { alert("كلمة سر خاطئة!"); }
-        }
-
-        function startWork() {
-            const now = new Date();
-            localStorage.setItem('work_start', now.toISOString());
-            updateUI(true);
-            startTimer(now);
-            showToast("تم تسجيل الحضور");
-        }
-
-        async function endWork() {
-    const startIso = localStorage.getItem('work_start');
-    const startTime = new Date(startIso);
-    const endTime = new Date();
-    
-    const formatTime = (date) => date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
-    const inTime = formatTime(startTime);
-    const outTime = formatTime(endTime);
-
-    const diffMs = endTime - startTime;
-    const diffHrs = Math.floor(diffMs / 3600000);
-    const diffMins = Math.floor((diffMs % 3600000) / 60000);
-    const totalStr = `${diffHrs} س و ${diffMins} د`;
-    
-    const dateStr = startTime.toLocaleDateString('en-GB'); // تاريخ الحضور
-    const monthYear = startTime.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }); // اسم الشهر
-
-    // تنظيم الأرشيف بنظام الشهور
-    let archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
-    if (!archive[monthYear]) archive[monthYear] = [];
-    
-    archive[monthYear].unshift({
-        date: dateStr,
-        in: inTime,
-        out: outTime,
-        total: totalStr,
-        timestamp: startTime.getTime()
-    });
-    
-    localStorage.setItem('user_archive_v2', JSON.stringify(archive));
-    
-    // إرسال للشيت
-    try {
-        await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ inTime: inTime, outTime: outTime, totalDuration: totalStr, originalStartDate: startIso })
-        });
-        showToast("تم الحفظ والمزامنة ✅");
-    } catch(e) { showToast("حفظ محلي فقط"); }
-
-    localStorage.removeItem('work_start');
-    clearInterval(timerInterval);
-    updateUI(false);
-    renderQuickLog();
-}
-        function renderQuickLog() {
-    const container = document.getElementById('quickLog');
-    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
-    
-    container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">سجلات الأسبوع الحالي</p>';
-    
-    let allEntries = [];
-    for (const month in archive) {
-        archive[month].forEach(item => {
-            allEntries.push(item);
-        });
-        // تحديث عداد الشهر الحالي بره في الواجهة
-    const currentMonthName = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-    const currentMonthEntries = archive[currentMonthName] || [];
-    const currentMonthTotal = calculateTotalHours(currentMonthEntries);
-    document.getElementById('currentMonthHours').innerText = currentMonthTotal;
-    }
-    
-    // ترتيب السجلات من الأحدث للأقدم
-    allEntries.sort((a, b) => b.timestamp - a.timestamp);
-    
-    // مصفوفة لترتيب أيام الأسبوع بدءاً من السبت
-    const dayOrder = ["السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة"];
-    
-    // فلترة السجلات لتعرض آخر 7 سجلات فريدة للأسبوع الحالي
-    const latestEntries = allEntries.slice(0, 7);
-    
-    if (latestEntries.length === 0) {
-        container.innerHTML += '<p style="color:#666; text-align:center; font-size:0.85rem">لا توجد سجلات مؤخراً</p>';
-        return;
-    }
-    
-    latestEntries.forEach((item, index) => {
-        // تحديد اسم اليوم بالعربي بناءً على التاريخ المحفوظ
-        const parts = item.date.split('/');
-        const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
-        const daysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-        const dayName = daysAr[dateObj.getDay()];
-        
-        const div = document.createElement('div');
-        div.className = 'log-item';
-        
-        // التحقق لو كان اليوم هو الثلاثاء (يوم الإجازة) لتمييزه بلون أخضر مشع
-        if (dayName === "الثلاثاء") {
-            div.style.borderRight = "4px solid #39ff14"; // أخضر مشع للشرطة الجانبية
-            div.style.boxShadow = "0 0 10px rgba(57, 255, 20, 0.2)"; // تأثير توهج خفيف
-            div.innerHTML = `<span style="color: #39ff14; font-weight: bold;">📅 ${item.date} (إجازة)</span><span style="color: #39ff14;">⏱️ ${item.total}</span>`;
-        } else {
-            div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.total}</span>`;
-        }
-        
-        div.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e.pageX, e.pageY, index); };
-        
-        // دعم اللمس المطول للهواتف لتفعيل قائمة التعديل
-        let touchTimer;
-        div.ontouchstart = (e) => { touchTimer = setTimeout(() => showContextMenu(e.touches[0].pageX, e.touches[0].pageY, index), 800); };
-        div.ontouchend = () => clearTimeout(touchTimer);
-        
-        container.appendChild(div);
-    });
-}
-
-        function editEntry() {
-    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
-    
-    // تجميع السجلات للوصول للسجل المختار بدقة
-    let allEntries = [];
-    let keysMapping = []; // لحفظ الإحداثيات الأصلية للسجل في الـ LocalStorage
-    
-    for (const month in archive) {
-        archive[month].forEach((item, idx) => {
-            allEntries.push(item);
-            keysMapping.push({ month: month, index: idx });
-        });
-    }
-    allEntries.sort((a, b) => b.timestamp - a.timestamp);
-    
-    selectedLogIndex = keysMapping[selectedIndex]; // حفظ المسار الأصلي للتعديل
-    const item = allEntries[selectedIndex];
-    
-    document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
-    // إذا لم يكن الوقت المسجل يحتوي على صيغة الحقول (HH:MM)، نضع قيمة افتراضية
-    document.getElementById('editInTime').value = item.in || "09:00";
-    document.getElementById('editOutTime').value = item.out || "17:00";
-    
-    closeModal('menuModal');
-    document.getElementById('editEntryModal').style.display = 'flex';
-}
-
-
-        function deleteEntry() {
-            selectedLogIndex = selectedIndex;
-            document.getElementById('deleteConfirmModal').style.display = 'flex';
-        }
-
-        function confirmDeleteEntry() {
-            let archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-            archive.splice(selectedLogIndex, 1);
-            localStorage.setItem('user_archive', JSON.stringify(archive));
-            closeModal('deleteConfirmModal');
-            renderQuickLog();
-            showToast("تم الحذف");
-        }
-
-        function checkActiveSession() {
-            const start = localStorage.getItem('work_start');
-            if(start) { updateUI(true); startTimer(new Date(start)); }
-        }
-
-        function updateUI(working) {
-            document.getElementById('btnIn').style.display = working ? 'none' : 'block';
-            document.getElementById('btnOut').style.display = working ? 'block' : 'none';
-            if(!working) document.getElementById('timer').innerText = "00:00:00";
-        }
-
-        function startTimer(start) {
-            if(timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                const now = new Date();
-                const diff = now - start;
-                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
-                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-                const timerElement = document.getElementById('timer');
-                if(timerElement) { timerElement.innerText = `${h}:${m}:${s}`; }
-            }, 1000);
-        }
-
-        async function syncToGoogle() {
-    const archive = JSON.parse(localStorage.getItem('user_archive') || '[]');
-    if(archive.length === 0) return alert("لا يوجد بيانات");
-    showToast("جاري المزامنة...");
-    
-    try {
-        for(let item of archive) {
-            await fetch(SCRIPT_URL, {
-                method: 'POST',
-                body: JSON.stringify({date: item.date, totalHours: item.hours})
-            });
-        }
-        alert("تمت المزامنة بنجاح!");
-    } catch(e) {
-        alert("فشلت المزامنة: " + e.message);
-    }
-}
-
-        function openMenu() { document.getElementById('menuModal').style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        function showArchive() {
-    const archive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
-    const container = document.getElementById('monthsContainer');
-    container.innerHTML = '';
-    closeModal('menuModal');
-    document.getElementById('archiveModal').style.display = 'flex';
-
-    if (Object.keys(archive).length === 0) {
-        container.innerHTML = '<p style="text-align:center; color:#666">لا توجد سجلات بعد</p>';
-        return;
-    }
-
-    for (const month in archive) {
-        // زرار الشهر
-        const monthBtn = document.createElement('button');
-        monthBtn.className = 'btn';
-        monthBtn.style = "background:#222; color:var(--gold); margin-bottom:5px; text-align:right; display:flex; justify-content:space-between";
-        monthBtn.innerHTML = `<span>${month}</span> <span>▼</span>`;
-        
-        // حاوية أيام الشهر
-        const daysDiv = document.createElement('div');
-        daysDiv.style.display = 'none';
-        daysDiv.style.background = '#000';
-        daysDiv.style.padding = '10px';
-        daysDiv.style.borderRadius = '10px';
-        daysDiv.style.marginBottom = '10px';
-
-        // رص الأيام
-        archive[month].forEach(item => {
-            const dayEntry = document.createElement('div');
-            dayEntry.style = "padding:10px; border-bottom:1px solid #222; font-size:0.85rem";
-            dayEntry.innerHTML = `
-                <div style="color:var(--gold)">📅 ${item.date}</div>
-                <div style="display:flex; justify-content:space-between; margin-top:5px">
-                    <span>🎬 ${item.in || '--:--'}</span>
-                    <span>🚪 ${item.out || '--:--'}</span>
-                    <span style="color:var(--success)">⏱️ ${item.total}</span>
-                </div>
-            `;
-            daysDiv.appendChild(dayEntry);
-        });
-
-        // --- التعديل الجديد: حساب وإضافة خانة الإجمالي في آخر قائمة الأيام ---
-        const totalHoursForMonth = calculateTotalHours(archive[month]);
-        const totalRow = document.createElement('div');
-        totalRow.style = "padding:12px 10px; margin-top:5px; background:#111; border-radius:8px; border:1px dashed var(--gold); text-align:center; font-size:0.9rem; font-weight:bold; color:var(--gold);";
-        totalRow.innerHTML = `🧮 إجمالي الساعات لشهر ${month.split(' ')[0]}: <span style="color:#fff">${totalHoursForMonth}</span>`;
-        daysDiv.appendChild(totalRow);
-        // ------------------------------------------------------------------
-
-        monthBtn.onclick = () => {
-            daysDiv.style.display = daysDiv.style.display === 'none' ? 'block' : 'none';
-        };
-
-        container.appendChild(monthBtn);
-        container.appendChild(daysDiv);
-    }
-}
-        function changePassPrompt() {
-            const newPass = prompt("أدخل كلمة السر الجديدة:");
-            if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم التغيير!"); }
-        }
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.bottom = "30px";
-            setTimeout(() => t.style.bottom = "-60px", 3000);
-        }
-    </script>
-</body>
-</html>
+        const SCRIPT_URL = "
