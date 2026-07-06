@@ -142,4 +142,385 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxlKjqq34ZBsb4RF7tINNCl4ORRDoSgU2STBzhuizju23OEeF97rXon4lFgHjrMWDc/exec";
+        const STANDARD_WORK_HOURS = 8; // عدد ساعات الشفت الأساسي
+        let pendingAction = null;
+        let timerInterval;
+        let selectedIndex = null;
+        let selectedLogIndex = null;
+        const menu = document.createElement('div');
+
+        window.onload = () => {
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                if (splash) {
+                    splash.style.opacity = '0';
+                    setTimeout(() => splash.style.display = 'none', 800);
+                }
+            }, 2000);
+
+            menu.className = 'context-menu';
+            menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
+            document.body.appendChild(menu);
+
+            renderQuickLog();
+            checkActiveSession();
+        };
+
+        function showContextMenu(x, y, index) {
+            selectedIndex = index;
+            menu.style.display = 'block';
+            menu.style.left = x + 'px';
+            menu.style.top = y + 'px';
+        }
+
+        document.addEventListener('click', () => { if(menu) menu.style.display = 'none'; });
+
+        function askPassword(action) {
+            pendingAction = action;
+            document.getElementById('passInput').value = "";
+            document.getElementById('passModal').style.display = 'flex';
+        }
+
+        function verifyPassword() {
+            const input = document.getElementById('passInput').value;
+            const savedPass = localStorage.getItem('app_pass') || '1234';
+            if(input === savedPass) {
+                closeModal('passModal');
+                pendingAction === 'in' ? startWork() : endWork();
+            } else { alert("كلمة سر خاطئة!"); }
+        }
+
+        function startWork() {
+            const now = new Date();
+            localStorage.setItem('work_start', now.toISOString());
+            updateUI(true);
+            startTimer(now);
+            showToast("تم تسجيل الحضور");
+        }
+
+        // دالة مساعدة لحساب الإجماليات والأوفر تايم بدقة
+        function processCalculations(entries) {
+            let totalMins = 0;
+            let totalOvertimeMins = 0;
+
+            entries.forEach(item => {
+                const hrsMatch = item.total.dynamicTotal.match(/(\d+)\s*س/);
+                const minsMatch = item.total.dynamicTotal.match(/(\d+)\s*د/);
+                const hrs = hrsMatch ? parseInt(hrsMatch[1]) : 0;
+                const mins = minsMatch ? parseInt(minsMatch[1]) : 0;
+                
+                let currentTotalMins = (hrs * 60) + mins;
+                totalMins += currentTotalMins;
+
+                // حساب الأوفر تايم لو تخطى الـ 8 ساعات (480 دقيقة)
+                if (currentTotalMins > (STANDARD_WORK_HOURS * 60)) {
+                    totalOvertimeMins += (currentTotalMins - (STANDARD_WORK_HOURS * 60));
+                }
+            });
+
+            return {
+                totalStr: `${Math.floor(totalMins / 60)} س و ${totalMins % 60} د`,
+                overtimeStr: `${Math.floor(totalOvertimeMins / 60)} س و ${totalOvertimeMins % 60} د`,
+                daysCount: entries.length
+            };
+        }
+
+        async function endWork() {
+            const startIso = localStorage.getItem('work_start');
+            const startTime = new Date(startIso);
+            const endTime = new Date();
+            
+            const formatTime = (date) => date.getHours().toString().padStart(2, '0') + ":" + date.getMinutes().toString().padStart(2, '0');
+            const inTime = formatTime(startTime);
+            const outTime = formatTime(endTime);
+
+            const diffMs = endTime - startTime;
+            let hrsDiff = Math.floor(diffMs / 3600000);
+            let minsDiff = Math.floor((diffMs % 3600000) / 60000);
+            
+            const dynamicTotal = `${hrsDiff} س و ${minsDiff} د`;
+            const dateStr = startTime.toLocaleDateString('en-GB');
+            const monthYear = startTime.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+
+            // حساب تفصيلي للأوفر تايم لإرساله للشيت
+            let currentTotalMins = (hrsDiff * 60) + minsDiff;
+            let ovHrs = 0, ovMins = 0;
+            if (currentTotalMins > (STANDARD_WORK_HOURS * 60)) {
+                let ovDiff = currentTotalMins - (STANDARD_WORK_HOURS * 60);
+                ovHrs = Math.floor(ovDiff / 60);
+                ovMins = ovDiff % 60;
+            }
+            const overtimeStr = `${ovHrs} س و ${ovMins} د`;
+
+            let archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            if (!archive[monthYear]) archive[monthYear] = [];
+            
+            archive[monthYear].unshift({
+                date: dateStr,
+                in: inTime,
+                out: outTime,
+                total: { dynamicTotal: dynamicTotal },
+                timestamp: startTime.getTime()
+            });
+            
+            localStorage.setItem('user_archive_v3', JSON.stringify(archive));
+            
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ 
+                        inTime: inTime, 
+                        outTime: outTime, 
+                        totalDuration: dynamicTotal, 
+                        overtime: overtimeStr,
+                        originalStartDate: startIso 
+                    })
+                });
+                showToast("تم الحفظ والمزامنة والأوفر تايم ✅");
+            } catch(e) { showToast("حفظ محلي فقط"); }
+
+            localStorage.removeItem('work_start');
+            clearInterval(timerInterval);
+            updateUI(false);
+            renderQuickLog();
+        }
+
+        function renderQuickLog() {
+            const container = document.getElementById('quickLog');
+            const archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            
+            container.innerHTML = '<p style="color:#444; text-align:center; margin-bottom:10px">سجلات الأسبوع الحالي</p>';
+            
+            let allEntries = [];
+            for (const month in archive) {
+                archive[month].forEach(item => { allEntries.push(item); });
+            }
+            
+            allEntries.sort((a, b) => b.timestamp - a.timestamp);
+            const latestEntries = allEntries.slice(0, 7);
+            
+            if (latestEntries.length === 0) {
+                container.innerHTML += '<p style="color:#666; text-align:center; font-size:0.85rem">لا توجد سجلات مؤخراً</p>';
+                return;
+            }
+            
+            latestEntries.forEach((item, index) => {
+                const parts = item.date.split('/');
+                const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+                const daysAr = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
+                const dayName = daysAr[dateObj.getDay()];
+                
+                const div = document.createElement('div');
+                div.className = 'log-item';
+                
+                if (dayName === "الثلاثاء") {
+                    div.style.borderRight = "4px solid #39ff14";
+                    div.style.boxShadow = "0 0 10px rgba(57, 255, 20, 0.2)";
+                    div.innerHTML = `<span style="color: #39ff14; font-weight: bold;">📅 ${item.date} (إجازة)</span><span style="color: #39ff14;">⏱️ ${item.total.dynamicTotal}</span>`;
+                } else {
+                    div.innerHTML = `<span>📅 ${item.date}</span><span>⏱️ ${item.total.dynamicTotal}</span>`;
+                }
+                
+                div.oncontextmenu = (e) => { e.preventDefault(); showContextMenu(e.pageX, e.pageY, index); };
+                container.appendChild(div);
+            });
+
+            // تحديث لوحة الإحصائيات الفورية للشهر الحالي على الواجهة
+            const currentMonthName = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+            const currentMonthEntries = archive[currentMonthName] || [];
+            const stats = processCalculations(currentMonthEntries);
+            
+            document.getElementById('statDays').innerText = stats.daysCount + " يوم";
+            document.getElementById('statTotalHrs').innerText = stats.totalStr;
+            document.getElementById('statOvertime').innerText = stats.overtimeStr;
+        }
+
+        function editEntry() {
+            const archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            let allEntries = [];
+            let keysMapping = [];
+            
+            for (const month in archive) {
+                archive[month].forEach((item, idx) => {
+                    allEntries.push(item);
+                    keysMapping.push({ month: month, index: idx });
+                });
+            }
+            allEntries.sort((a, b) => b.timestamp - a.timestamp);
+            
+            selectedLogIndex = keysMapping[selectedIndex];
+            const item = allEntries[selectedIndex];
+            
+            document.getElementById('editDateLabel').innerText = "تاريخ السجل: " + item.date;
+            document.getElementById('editInTime').value = item.in || "09:00";
+            document.getElementById('editOutTime').value = item.out || "17:00";
+            
+            closeModal('menuModal');
+            document.getElementById('editEntryModal').style.display = 'flex';
+        }
+
+        function saveEditedEntry() {
+            let archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            const targetMonth = selectedLogIndex.month;
+            const targetIdx = selectedLogIndex.index;
+            
+            const inTimeValue = document.getElementById('editInTime').value;
+            const outTimeValue = document.getElementById('editOutTime').value;
+            
+            if(!inTimeValue || !outTimeValue) return alert("الرجاء إدخال الحقول كاملة");
+            
+            const inParts = inTimeValue.split(':');
+            const outParts = outTimeValue.split(':');
+            let hrsDiff = parseInt(outParts[0]) - parseInt(inParts[0]);
+            let minsDiff = parseInt(outParts[1]) - parseInt(inParts[1]);
+            
+            if (hrsDiff < 0 || (hrsDiff === 0 && minsDiff < 0)) hrsDiff += 24;
+            if (minsDiff < 0) { minsDiff += 60; hrsDiff -= 1; }
+            
+            archive[targetMonth][targetIdx].in = inTimeValue;
+            archive[targetMonth][targetIdx].out = outTimeValue;
+            archive[targetMonth][targetIdx].total.dynamicTotal = `${hrsDiff} س و ${minsDiff} د`;
+            
+            localStorage.setItem('user_archive_v3', JSON.stringify(archive));
+            closeModal('editEntryModal');
+            renderQuickLog();
+            showToast("تم التحديث وإعادة حساب الساعات ⏱️");
+        }
+
+        function deleteEntry() {
+            const archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            let keysMapping = [];
+            for (const month in archive) {
+                archive[month].forEach((item, idx) => { keysMapping.push({ month: month, index: idx }); });
+            }
+            selectedLogIndex = keysMapping[selectedIndex];
+            document.getElementById('deleteConfirmModal').style.display = 'flex';
+        }
+
+        function confirmDeleteEntry() {
+            let archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            archive[selectedLogIndex.month].splice(selectedLogIndex.index, 1);
+            if(archive[selectedLogIndex.month].length === 0) delete archive[selectedLogIndex.month];
+            localStorage.setItem('user_archive_v3', JSON.stringify(archive));
+            closeModal('deleteConfirmModal');
+            renderQuickLog();
+            showToast("تم الحذف");
+        }
+
+        function showArchive() {
+            const archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            const container = document.getElementById('monthsContainer');
+            container.innerHTML = '';
+            closeModal('menuModal');
+            document.getElementById('archiveModal').style.display = 'flex';
+
+            if (Object.keys(archive).length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#666">لا توجد سجلات بعد</p>';
+                return;
+            }
+
+            for (const month in archive) {
+                const monthBtn = document.createElement('button');
+                monthBtn.className = 'btn';
+                monthBtn.style = "background:#222; color:var(--gold); margin-bottom:5px; text-align:right; display:flex; justify-content:space-between";
+                monthBtn.innerHTML = `<span>${month}</span> <span>▼</span>`;
+                
+                const daysDiv = document.createElement('div');
+                daysDiv.style.display = 'none';
+                daysDiv.style.background = '#000';
+                daysDiv.style.padding = '10px';
+                daysDiv.style.borderRadius = '10px';
+                daysDiv.style.marginBottom = '10px';
+
+                archive[month].forEach(item => {
+                    const dayEntry = document.createElement('div');
+                    dayEntry.style = "padding:10px; border-bottom:1px solid #222; font-size:0.85rem";
+                    dayEntry.innerHTML = `
+                        <div style="color:var(--gold)">📅 ${item.date}</div>
+                        <div style="display:flex; justify-content:space-between; margin-top:5px">
+                            <span>🎬 ${item.in}</span>
+                            <span>🚪 ${item.out}</span>
+                            <span style="color:var(--success)">⏱️ ${item.total.dynamicTotal}</span>
+                        </div>
+                    `;
+                    daysDiv.appendChild(dayEntry);
+                });
+
+                // لوحة إحصائيات الشهر التفصيلية داخل الأرشيف
+                const stats = processCalculations(archive[month]);
+                const totalRow = document.createElement('div');
+                totalRow.style = "padding:12px 10px; margin-top:8px; background:#111; border-radius:8px; border:1px dashed var(--gold); font-size:0.85rem; color:#fff;";
+                totalRow.innerHTML = `
+                    <div style="color:var(--gold); font-weight:bold; text-align:center; margin-bottom:5px;">📊 الحسبة الختامية للشهر</div>
+                    <div style="display:flex; justify-content:space-between;"><span>أيام العمل: ${stats.daysCount}</span> <span>صافي الساعات: ${stats.totalStr}</span></div>
+                    <div style="color:var(--info); text-align:center; margin-top:5px;">🚀 إجمالي الأوفر تايم: ${stats.overtimeStr}</div>
+                `;
+                daysDiv.appendChild(totalRow);
+
+                monthBtn.onclick = () => { daysDiv.style.display = daysDiv.style.display === 'none' ? 'block' : 'none'; };
+                container.appendChild(monthBtn);
+                container.appendChild(daysDiv);
+            }
+        }
+
+        function checkActiveSession() {
+            const start = localStorage.getItem('work_start');
+            if(start) { updateUI(true); startTimer(new Date(start)); }
+        }
+
+        function updateUI(working) {
+            document.getElementById('btnIn').style.display = working ? 'none' : 'block';
+            document.getElementById('btnOut').style.display = working ? 'block' : 'none';
+            if(!working) document.getElementById('timer').innerText = "00:00:00";
+        }
+
+        function startTimer(start) {
+            if(timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                const now = new Date();
+                const diff = now - start;
+                const h = Math.floor(diff / 3600000).toString().padStart(2, '0');
+                const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+                const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+                document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+            }, 1000);
+        }
+
+        async function syncToGoogle() {
+            const archive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+            if(Object.keys(archive).length === 0) return alert("لا يوجد بيانات");
+            showToast("جاري المزامنة الكلية...");
+            for(let month in archive) {
+                for(let item of archive[month]) {
+                    // حساب أوفر تايم سريع للمزامنة اليدوية
+                    const hrsMatch = item.total.dynamicTotal.match(/(\d+)\s*س/);
+                    const minsMatch = item.total.dynamicTotal.match(/(\d+)\s*د/);
+                    let mins = (hrsMatch ? parseInt(hrsMatch[1])*60 : 0) + (minsMatch ? parseInt(minsMatch[1]) : 0);
+                    let ovStr = "0 س و 0 د";
+                    if(mins > 480) {
+                        ovStr = `${Math.floor((mins-480)/60)} س و ${(mins-480)%60} د`;
+                    }
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        body: JSON.stringify({ inTime: item.in, outTime: item.out, totalDuration: item.total.dynamicTotal, overtime: ovStr, originalStartDate: new Date(item.timestamp).toISOString() })
+                    });
+                }
+            }
+            alert("تمت المزامنة بنجاح الكلي!");
+        }
+
+        function openMenu() { document.getElementById('menuModal').style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        function changePassPrompt() {
+            const newPass = prompt("أدخل كلمة السر الجديدة:");
+            if(newPass) { localStorage.setItem('app_pass', newPass); alert("تم التغيير!"); }
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.bottom = "30px";
+            setTimeout(() => t.style.bottom = "-60px", 3000);
+        }
+    </script>
+</body>
+</html>
