@@ -151,22 +151,53 @@
         const menu = document.createElement('div');
 
         window.onload = () => {
-            setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                if (splash) {
-                    splash.style.opacity = '0';
-                    setTimeout(() => splash.style.display = 'none', 800);
+    // --- كود نقل البيانات القديمة للنظام الجديد تلقائياً ---
+    const oldArchive = JSON.parse(localStorage.getItem('user_archive_v2') || '{}');
+    let newArchive = JSON.parse(localStorage.getItem('user_archive_v3') || '{}');
+    
+    // لو لقيت داتا قديمة والمخزن الجديد لسه فاضي، انقل الداتا
+    if (Object.keys(oldArchive).length > 0 && Object.keys(newArchive).length === 0) {
+        for (const month in oldArchive) {
+            newArchive[month] = oldArchive[month].map(item => {
+                // تحويل صيغة الوقت القديمة لتناسب أوبجكت التوتال الجديد
+                let totalStr = "";
+                if (typeof item.total === 'string') {
+                    totalStr = item.total;
+                } else if (item.total && item.total.dynamicTotal) {
+                    totalStr = item.total.dynamicTotal;
+                } else {
+                    totalStr = "0 س و 0 د";
                 }
-            }, 2000);
+                
+                return {
+                    date: item.date,
+                    in: item.in || "09:00",
+                    out: item.out || "17:00",
+                    total: { dynamicTotal: totalStr },
+                    timestamp: item.timestamp || new Date().getTime()
+                };
+            });
+        }
+        // حفظ البيانات في المخزن الجديد
+        localStorage.setItem('user_archive_v3', JSON.stringify(newArchive));
+    }
+    // --------------------------------------------------------
 
-            menu.className = 'context-menu';
-            menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
-            document.body.appendChild(menu);
+    setTimeout(() => {
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.style.opacity = '0';
+            setTimeout(() => splash.style.display = 'none', 800);
+        }
+    }, 2000);
 
-            renderQuickLog();
-            checkActiveSession();
-        };
+    menu.className = 'context-menu';
+    menu.innerHTML = `<div class="context-menu-item" onclick="editEntry()">✏️ تعديل</div><div class="context-menu-item" onclick="deleteEntry()">🗑️ حذف</div>`;
+    document.body.appendChild(menu);
 
+    renderQuickLog();
+    checkActiveSession();
+};
         function showContextMenu(x, y, index) {
             selectedIndex = index;
             menu.style.display = 'block';
